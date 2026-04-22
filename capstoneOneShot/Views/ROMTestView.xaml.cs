@@ -4,8 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
 using System.Windows.Threading;
-
+using Microsoft.Kinect;
 
 namespace capstoneOneShot.Views
 {
@@ -18,7 +20,8 @@ namespace capstoneOneShot.Views
         private int _secondsRemaining;
         private bool _testRunning = false;
 
-        // The difficulty result — read this after the window closes
+        private const double JointRadius = 6;
+
         public DifficultyLevel ResultDifficulty { get; private set; } = DifficultyLevel.Beginner;
 
         public ROMTestView(KinectManager kinectManager)
@@ -27,25 +30,21 @@ namespace capstoneOneShot.Views
             _kinectManager = kinectManager;
             _romService = new ROMTestService();
 
-            // Hook into skeleton frames for live angle display
+            _kinectManager.ColorFrameReady += OnColorFrameReady;
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
+            _kinectManager.BodyStatusChanged += OnBodyStatusChanged;
 
             LoadCurrentTest();
         }
 
         // ---------------------------------------------------------------
-        // Load the current test instructions into the UI
+        // Load current test into UI
         // ---------------------------------------------------------------
         private void LoadCurrentTest()
         {
-            if (_romService.IsComplete)
-            {
-                FinishAllTests();
-                return;
-            }
+            if (_romService.IsComplete) { FinishAllTests(); return; }
 
             var test = _romService.GetCurrentTest();
-
             TestNameLabel.Text = test.Name;
             InstructionLabel.Text = test.Instruction;
             ProgressLabel.Text = $"Test {_romService.CurrentTestIndex + 1} of {_romService.Tests.Count}";
@@ -57,14 +56,176 @@ namespace capstoneOneShot.Views
         }
 
         // ---------------------------------------------------------------
-        // Start / Next button logic
+        // Camera feed
+        // ---------------------------------------------------------------
+        private void OnColorFrameReady(System.Windows.Media.Imaging.BitmapSource bitmap)
+        {
+            Dispatcher.Invoke(() => CameraFeed.Source = bitmap);
+        }
+
+        // ---------------------------------------------------------------
+        // Body detection warnings — reuse same logic as SessionView
+        // ---------------------------------------------------------------
+        private void OnBodyStatusChanged(BodyDetectionStatus status)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                switch (status)
+                {
+                    case BodyDetectionStatus.Detected:
+                        NoBodyOverlay.Visibility = Visibility.Collapsed;
+                        PartialBodyBanner.Visibility = Visibility.Collapsed;
+                        SetTrackingStatus("Fully Tracked", "#4CAF50");
+                        break;
+                    case BodyDetectionStatus.PartialDetect:
+                        NoBodyOverlay.Visibility = Visibility.Collapsed;
+                        PartialBodyBanner.Visibility = Visibility.Visible;
+                        SetTrackingStatus("Partial Tracking", "#F59E0B");
+                        break;
+                    case BodyDetectionStatus.NotDetected:
+                        NoBodyOverlay.Visibility = Visibility.Visible;
+                        PartialBodyBanner.Visibility = Visibility.Collapsed;
+                        SetTrackingStatus("Not Detected", "#EF4444");
+                        AngleReadout.Text = "-- °";
+                        BestAngleReadout.Text = "-- °";
+                        break;
+                }
+            });
+        }
+
+        private void SetTrackingStatus(string text, string hex)
+        {
+            var color = (Color)ColorConverter.ConvertFromString(hex);
+            TrackingStatusLabel.Text = text;
+            TrackingStatusLabel.Foreground = new SolidColorBrush(color);
+            TrackingDot.Fill = new SolidColorBrush(color);
+        }
+
+        // ---------------------------------------------------------------
+        // Skeleton frame — record angles, draw skeleton, update readouts
+        // ---------------------------------------------------------------
+        private void OnSkeletonFrameReady(Skeleton[] skeletons)
+        {
+            if (skeletons == null || skeletons.Length == 0) return;
+
+            var skeleton = skeletons[0];
+            var angles = BuildAngleDictionary(skeleton);
+
+            if (_testRunning && _secondsRemaining > 0)
+                _romService.RecordFrame(angles);
+
+            var test = _romService.GetCurrentTest();
+            if (test == null) return;
+
+            angles.TryGetValue(test.JointToMeasure, out double currentAngle);
+
+            Dispatcher.Invoke(() =>
+            {
+                AngleReadout.Text = $"{currentAngle:F1} °";
+                BestAngleReadout.Text = $"{currentAngle:F1} °";
+                DrawSkeleton(skeleton);
+            });
+        }
+
+        // ---------------------------------------------------------------
+        // Skeleton drawing
+        // ---------------------------------------------------------------
+        private void DrawSkeleton(Skeleton skeleton)
+        {
+            SkeletonCanvas.Children.Clear();
+
+            var bones = new[]
+            {
+                (JointType.Head,           JointType.ShoulderCenter),
+                (JointType.ShoulderCenter, JointType.ShoulderLeft),
+                (JointType.ShoulderCenter, JointType.ShoulderRight),
+                (JointType.ShoulderLeft,   JointType.ElbowLeft),
+                (JointType.ElbowLeft,      JointType.WristLeft),
+                (JointType.ShoulderRight,  JointType.ElbowRight),
+                (JointType.ElbowRight,     JointType.WristRight),
+                (JointType.ShoulderCenter, JointType.HipCenter),
+                (JointType.HipCenter,      JointType.HipLeft),
+                (JointType.HipCenter,      JointType.HipRight),
+                (JointType.HipLeft,        JointType.KneeLeft),
+                (JointType.KneeLeft,       JointType.AnkleLeft),
+                (JointType.HipRight,       JointType.KneeRight),
+                (JointType.KneeRight,      JointType.AnkleRight),
+            };
+
+            foreach (var (a, b) in bones) DrawBone(skeleton, a, b);
+            foreach (var jt in JointAngleCalculator.AnalysisJoints) DrawJoint(skeleton.Joints[jt]);
+        }
+
+        private void DrawBone(Skeleton skeleton, JointType a, JointType b)
+        {
+            var j1 = skeleton.Joints[a];
+            var j2 = skeleton.Joints[b];
+            if (j1.TrackingState == JointTrackingState.NotTracked ||
+                j2.TrackingState == JointTrackingState.NotTracked) return;
+
+            var p1 = MapToCanvas(j1.Position);
+            var p2 = MapToCanvas(j2.Position);
+            SkeletonCanvas.Children.Add(new Line
+            {
+                X1 = p1.X,
+                Y1 = p1.Y,
+                X2 = p2.X,
+                Y2 = p2.Y,
+                Stroke = new SolidColorBrush(Color.FromArgb(200, 100, 181, 246)),
+                StrokeThickness = 3
+            });
+        }
+
+        private void DrawJoint(Joint joint)
+        {
+            if (joint.TrackingState == JointTrackingState.NotTracked) return;
+            var p = MapToCanvas(joint.Position);
+            var c = new Ellipse
+            {
+                Width = JointRadius * 2,
+                Height = JointRadius * 2,
+                Fill = Brushes.White,
+                Stroke = new SolidColorBrush(Color.FromRgb(100, 181, 246)),
+                StrokeThickness = 2
+            };
+            Canvas.SetLeft(c, p.X - JointRadius);
+            Canvas.SetTop(c, p.Y - JointRadius);
+            SkeletonCanvas.Children.Add(c);
+        }
+
+        private Point MapToCanvas(SkeletonPoint pos)
+        {
+            double w = SkeletonCanvas.ActualWidth > 0 ? SkeletonCanvas.ActualWidth : 640;
+            double h = SkeletonCanvas.ActualHeight > 0 ? SkeletonCanvas.ActualHeight : 480;
+            return new Point((pos.X + 1.0) / 2.0 * w, (1.0 - (pos.Y + 1.0) / 2.0) * h);
+        }
+
+        // ---------------------------------------------------------------
+        // Angle dictionary
+        // ---------------------------------------------------------------
+        private Dictionary<string, double> BuildAngleDictionary(Skeleton skeleton)
+        {
+            var j = skeleton.Joints;
+            return new Dictionary<string, double>
+            {
+                ["LeftShoulder"] = JointAngleCalculator.CalculateAngle(
+                    j[JointType.ShoulderCenter].Position, j[JointType.ShoulderLeft].Position, j[JointType.ElbowLeft].Position),
+                ["RightShoulder"] = JointAngleCalculator.CalculateAngle(
+                    j[JointType.ShoulderCenter].Position, j[JointType.ShoulderRight].Position, j[JointType.ElbowRight].Position),
+                ["LeftKnee"] = JointAngleCalculator.CalculateAngle(
+                    j[JointType.HipLeft].Position, j[JointType.KneeLeft].Position, j[JointType.AnkleLeft].Position),
+                ["LeftHip"] = JointAngleCalculator.CalculateAngle(
+                    j[JointType.ShoulderCenter].Position, j[JointType.HipCenter].Position, j[JointType.KneeLeft].Position),
+            };
+        }
+
+        // ---------------------------------------------------------------
+        // Button / countdown
         // ---------------------------------------------------------------
         private void NextButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!_testRunning)
-                StartCountdown();
-            else
-                AdvanceTest();
+            if (!_testRunning) StartCountdown();
+            else AdvanceTest();
         }
 
         private void StartCountdown()
@@ -92,8 +253,8 @@ namespace capstoneOneShot.Views
             {
                 _countdownTimer.Stop();
                 NextButton.Content = _romService.CurrentTestIndex < _romService.Tests.Count - 1
-                                       ? "Next Test →"
-                                       : "See Results";
+                                     ? "Next Test →"
+                                     : "See Results";
                 NextButton.IsEnabled = true;
             }
         }
@@ -105,93 +266,32 @@ namespace capstoneOneShot.Views
         }
 
         // ---------------------------------------------------------------
-        // Skeleton frame — record angles and update UI readouts
-        // ---------------------------------------------------------------
-        private void OnSkeletonFrameReady(Microsoft.Kinect.Skeleton[] skeletons)
-        {
-            if (!_testRunning || _secondsRemaining <= 0) return;
-            if (skeletons == null || skeletons.Length == 0) return;
-
-            var skeleton = skeletons[0];
-
-            // Build angle dictionary from skeleton
-            var angles = BuildAngleDictionary(skeleton);
-
-            // Let the service record the best angle
-            _romService.RecordFrame(angles);
-
-            // Update UI on dispatcher thread
-            var test = _romService.GetCurrentTest();
-            if (test == null) return;
-
-            if (angles.TryGetValue(test.JointToMeasure, out double currentAngle))
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    AngleReadout.Text = $"{currentAngle:F1} °";
-                    BestAngleReadout.Text = $"{currentAngle:F1} °"; // ROMTestService tracks the best internally
-                });
-            }
-        }
-
-        // ---------------------------------------------------------------
-        // Build a simple angle dictionary from skeleton joints
-        // ---------------------------------------------------------------
-        private Dictionary<string, double> BuildAngleDictionary(Microsoft.Kinect.Skeleton skeleton)
-        {
-            var joints = skeleton.Joints;
-            var angles = new Dictionary<string, double>();
-
-            // Left Shoulder angle (ShoulderCenter - ShoulderLeft - ElbowLeft)
-            angles["LeftShoulder"] = JointAngleCalculator.CalculateAngle(
-                joints[Microsoft.Kinect.JointType.ShoulderCenter].Position,
-                joints[Microsoft.Kinect.JointType.ShoulderLeft].Position,
-                joints[Microsoft.Kinect.JointType.ElbowLeft].Position);
-
-            // Right Shoulder angle
-            angles["RightShoulder"] = JointAngleCalculator.CalculateAngle(
-                joints[Microsoft.Kinect.JointType.ShoulderCenter].Position,
-                joints[Microsoft.Kinect.JointType.ShoulderRight].Position,
-                joints[Microsoft.Kinect.JointType.ElbowRight].Position);
-
-            // Left Knee angle (HipLeft - KneeLeft - AnkleLeft)
-            angles["LeftKnee"] = JointAngleCalculator.CalculateAngle(
-                joints[Microsoft.Kinect.JointType.HipLeft].Position,
-                joints[Microsoft.Kinect.JointType.KneeLeft].Position,
-                joints[Microsoft.Kinect.JointType.AnkleLeft].Position);
-
-            // Left Hip angle (ShoulderCenter - HipCenter - KneeLeft)
-            angles["LeftHip"] = JointAngleCalculator.CalculateAngle(
-                joints[Microsoft.Kinect.JointType.ShoulderCenter].Position,
-                joints[Microsoft.Kinect.JointType.HipCenter].Position,
-                joints[Microsoft.Kinect.JointType.KneeLeft].Position);
-
-            return angles;
-        }
-
-        // ---------------------------------------------------------------
-        // All tests done — evaluate and close
+        // Finish
         // ---------------------------------------------------------------
         private void FinishAllTests()
         {
             ResultDifficulty = _romService.EvaluateDifficulty();
 
-            string levelText = ResultDifficulty.ToString();
             MessageBox.Show(
-                $"ROM Test complete!\n\nYour recommended difficulty level is: {levelText}\n\nWe'll start your session with {levelText} poses.",
-                "Assessment Complete",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                $"ROM Test complete!\n\nYour recommended difficulty: {ResultDifficulty}\n\nWe'll start your session with {ResultDifficulty} poses.",
+                "Assessment Complete", MessageBoxButton.OK, MessageBoxImage.Information);
 
-            _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
+            Cleanup();
             DialogResult = true;
             Close();
         }
 
-        protected override void OnClosed(EventArgs e)
+        private void Cleanup()
         {
             _countdownTimer?.Stop();
+            _kinectManager.ColorFrameReady -= OnColorFrameReady;
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
+            _kinectManager.BodyStatusChanged -= OnBodyStatusChanged;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            Cleanup();
             base.OnClosed(e);
         }
     }
