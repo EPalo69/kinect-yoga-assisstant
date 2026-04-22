@@ -1,0 +1,224 @@
+﻿<Window x:Class="capstoneOneShot.Views.SessionView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Yoga Session" Height="800" Width="1200"
+        WindowStartupLocation="CenterScreen" Background="#1A1A2E">
+
+    <Window.Resources>
+        <Style x:Key="FeedbackItem" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FF6B6B"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#9E9E9E"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="320"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT: Layered camera + skeleton + warnings -->
+        <Border Grid.Column="0" Background="#0D0D1A"
+                Margin="16,16,8,16" CornerRadius="12" ClipToBounds="True">
+            <Grid>
+                <!-- Layer 1: Camera feed -->
+                <Image x:Name="CameraFeed" Stretch="UniformToFill"/>
+
+                <!-- Layer 2: Skeleton overlay -->
+                <Canvas x:Name="SkeletonCanvas"/>
+
+                <!-- Layer 3: No body detected — full overlay -->
+                <Border x:Name="NoBodyOverlay" Background="#CC1A1A2E" Visibility="Visible">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Background="#FFCC00" CornerRadius="50"
+                                Width="80" Height="80" HorizontalAlignment="Center" Margin="0,0,0,16">
+                            <TextBlock Text="⚠" FontSize="40" Foreground="#1A1A2E"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock x:Name="NoBodyTitle" Text="No Body Detected"
+                                   FontSize="24" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="Step in front of the Kinect so your full body is visible."
+                                   FontSize="14" Foreground="#BDBDBD" TextAlignment="Center"
+                                   TextWrapping="Wrap" MaxWidth="400" Margin="0,0,0,24"
+                                   HorizontalAlignment="Center"/>
+                        <Border Background="#22FFFFFF" CornerRadius="8" Padding="20,16" MaxWidth="420">
+                            <StackPanel>
+                                <TextBlock Text="TIPS" FontSize="11" FontWeight="Bold"
+                                           Foreground="#FFCC00" Margin="0,0,0,10"/>
+                                <TextBlock Text="• Stand 1.5 – 2.5 meters from the sensor"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Make sure the room is well lit"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Full body from head to feet must be visible"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Remove objects blocking the sensor"
+                                           Foreground="#BDBDBD" FontSize="13"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Layer 4: Partial tracking banner -->
+                <Border x:Name="PartialBodyBanner" Background="#EEF59E0B"
+                        Padding="16,10" VerticalAlignment="Top" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="⚠  " Foreground="#1A1A2E" FontSize="16"
+                                   FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Partial tracking — step back so your full body is visible"
+                                   Foreground="#1A1A2E" FontSize="14" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- HUD: pose name top-left -->
+                <Border Background="#AA000000" CornerRadius="8" Padding="12,8"
+                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="NOW: " Foreground="#9E9E9E" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="CurrentPoseLabel" Text="—" Foreground="White"
+                                   FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- HUD: hold timer top-right -->
+                <Border Background="#AA000000" CornerRadius="8" Padding="12,8"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="16">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="HOLD  " Foreground="#9E9E9E" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="HoldTimerLabel" Text="0s" Foreground="#4CAF50"
+                                   FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- HUD: score bottom-center -->
+                <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="MATCH SCORE" Foreground="#9E9E9E" FontSize="11"
+                                   FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                        <Border Background="#AA000000" CornerRadius="50" Width="90" Height="90">
+                            <TextBlock x:Name="ScoreLabel" Text="0%" FontSize="26"
+                                       FontWeight="Bold" Foreground="#4CAF50"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- RIGHT: Info panel -->
+        <Border Grid.Column="1" Background="#16213E"
+                Margin="8,16,16,16" CornerRadius="12" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="SESSION" Style="{StaticResource SectionLabel}"/>
+                    <TextBlock x:Name="DifficultyLabel" Text="Beginner"
+                               FontSize="18" FontWeight="Bold" Foreground="#E0E0E0" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="PoseCountLabel" Text="Pose 1 of 3"
+                               FontSize="13" Foreground="#9E9E9E" Margin="0,0,0,16"/>
+                    <Separator Background="#333355" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="ABOUT THIS POSE" Style="{StaticResource SectionLabel}"/>
+                    <TextBlock x:Name="PoseDescriptionLabel" Text="" FontSize="13"
+                               Foreground="#BDBDBD" TextWrapping="Wrap"
+                               LineHeight="22" Margin="0,0,0,16"/>
+                    <Separator Background="#333355" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="TRACKING STATUS" Style="{StaticResource SectionLabel}"/>
+                    <Border Background="#333355" CornerRadius="6" Padding="10,6"
+                            Margin="0,0,0,16" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="TrackingDot" Width="10" Height="10"
+                                     Fill="#9E9E9E" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="TrackingStatusLabel" Text="Waiting..."
+                                       Foreground="#9E9E9E" FontSize="13"/>
+                        </StackPanel>
+                    </Border>
+                    <Separator Background="#333355" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="JOINT ANGLES" Style="{StaticResource SectionLabel}"/>
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="L. Knee"
+                                   Foreground="#9E9E9E" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="LeftKneeAngle"
+                                   Text="--°" Foreground="#E0E0E0" FontSize="12" FontWeight="Bold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="R. Knee"
+                                   Foreground="#9E9E9E" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="RightKneeAngle"
+                                   Text="--°" Foreground="#E0E0E0" FontSize="12" FontWeight="Bold"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="L. Shoulder"
+                                   Foreground="#9E9E9E" FontSize="12" Margin="0,0,0,6"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="LeftShoulderAngle"
+                                   Text="--°" Foreground="#E0E0E0" FontSize="12" FontWeight="Bold"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="R. Shoulder"
+                                   Foreground="#9E9E9E" FontSize="12"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" x:Name="RightShoulderAngle"
+                                   Text="--°" Foreground="#E0E0E0" FontSize="12" FontWeight="Bold"/>
+                    </Grid>
+                    <Separator Background="#333355" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="CORRECTIONS" Style="{StaticResource SectionLabel}"/>
+                    <ItemsControl x:Name="FeedbackList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="⚠ " Foreground="#FFC107" FontSize="13"/>
+                                    <TextBlock Text="{Binding}" Style="{StaticResource FeedbackItem}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock x:Name="AllGoodLabel" Text="✓ Great form! Keep holding."
+                               Foreground="#4CAF50" FontSize="14" FontWeight="SemiBold"
+                               Margin="0,8,0,0" Visibility="Collapsed"/>
+                    <Separator Background="#333355" Margin="0,20,0,16"/>
+
+                    <Button x:Name="NextPoseButton" Content="Next Pose →"
+                            Background="#4CAF50" Foreground="White" FontSize="15"
+                            FontWeight="SemiBold" BorderThickness="0"
+                            Padding="20,12" Cursor="Hand" Click="NextPoseButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="EndSessionButton" Content="End Session"
+                            Background="#333355" Foreground="#9E9E9E" FontSize="14"
+                            BorderThickness="0" Padding="20,10" Margin="0,8,0,0"
+                            Cursor="Hand" Click="EndSessionButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                        CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>
