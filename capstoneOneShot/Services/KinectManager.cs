@@ -17,6 +17,7 @@ namespace capstoneOneShot.Services
     public class KinectManager
     {
         private KinectSensor _sensor;
+        public KinectSensor Sensor => _sensor;
 
         // Skeleton event — fires with the first fully tracked skeleton
         public event Action<Skeleton[]> SkeletonFrameReady;

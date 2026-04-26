@@ -1,13 +1,14 @@
-﻿using System;
+using capstoneOneShot.Models;
+using capstoneOneShot.Services;
+using Microsoft.Kinect;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using Microsoft.Kinect;
-using capstoneOneShot.Models;
-using capstoneOneShot.Services;
 
 namespace capstoneOneShot.Views
 {
@@ -23,22 +24,53 @@ namespace capstoneOneShot.Views
 
         private const double JointRadius = 6;
 
+        private List<double> _frameScores = new List<double>();
+        private double _bestScore = 0;
+        private PoseDefinition _currentPose => _poses[_currentPoseIndex];
+
+
         public SessionView(KinectManager kinectManager, DifficultyLevel difficulty)
         {
             InitializeComponent();
-
             _kinectManager = kinectManager;
             _evaluator = new PoseEvaluator();
             _poses = PoseLibrary.GetPosesByDifficulty(difficulty);
 
-            DifficultyLabel.Text = difficulty.ToString();
+            SetupUI(difficulty.ToString());
+            SetupKinect();
+            LoadPose(0);
+            StartHoldTimer();
+        }
 
+        public SessionView(KinectManager kinectManager, PoseDefinition pose)
+        {
+            InitializeComponent();
+            _kinectManager = kinectManager;
+            _evaluator = new PoseEvaluator();
+            _poses = new List<PoseDefinition> { pose };
+
+            SetupUI(pose.Difficulty.ToString());
+            SetupKinect();
+            LoadPose(0);
+            StartHoldTimer();
+        }
+
+        private void SetupUI(string difficultyText)
+        {
+            DifficultyLabel.Text = difficultyText;
+        }
+
+        private void SetupKinect()
+        {
             _kinectManager.ColorFrameReady += OnColorFrameReady;
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged += OnBodyStatusChanged;
-
-            LoadPose(0);
-            StartHoldTimer();
+        }
+        private void UnhookKinect()
+        {
+            _kinectManager.ColorFrameReady -= OnColorFrameReady;
+            _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
+            _kinectManager.BodyStatusChanged -= OnBodyStatusChanged;
         }
 
         private void LoadPose(int index)
@@ -56,6 +88,33 @@ namespace capstoneOneShot.Views
             FeedbackList.ItemsSource = null;
             AllGoodLabel.Visibility = Visibility.Collapsed;
             _holdSeconds = 0;
+
+            LoadPoseImage(pose.ImageFileName);
+        }
+
+        /// <summary>
+        /// Loads the reference image for the current pose from Assets/Poses/.
+        /// The filename comes directly from <see cref="PoseDefinition.ImageFileName"/> — no name derivation.
+        /// </summary>
+        private void LoadPoseImage(string imageFileName)
+        {
+            if (!string.IsNullOrEmpty(imageFileName))
+            {
+                var path = System.IO.Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory, "Assets", "Poses", imageFileName);
+
+                if (System.IO.File.Exists(path))
+                {
+                    PoseReferenceImage.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(path));
+                    PoseReferenceImage.Visibility = Visibility.Visible;
+                    PoseImagePlaceholder.Visibility = Visibility.Collapsed;
+                    return;
+                }
+            }
+
+            // Fall through: no filename set or file not found — show placeholder
+            PoseReferenceImage.Visibility = Visibility.Collapsed;
+            PoseImagePlaceholder.Visibility = Visibility.Visible;
         }
 
         private void StartHoldTimer()
@@ -110,36 +169,48 @@ namespace capstoneOneShot.Views
         private void OnSkeletonFrameReady(Skeleton[] skeletons)
         {
             if (skeletons == null || skeletons.Length == 0) return;
+
             var skeleton = skeletons[0];
             var angles = BuildAngleDictionary(skeleton);
-            var pose = _poses[_currentPoseIndex];
-            var result = _evaluator.Evaluate(pose, angles);
+            var result = _evaluator.Evaluate(_currentPose, angles);
+
+            // Track scores for results screen
+            _frameScores.Add(result.Score);
+            if (result.Score > _bestScore) _bestScore = result.Score;
 
             Dispatcher.Invoke(() =>
             {
-                ScoreLabel.Text = $"{result.Score:F0}%";
-                ScoreLabel.Foreground = result.IsPoseCorrect
-                    ? new SolidColorBrush(Color.FromRgb(76, 175, 80))
-                    : new SolidColorBrush(Color.FromRgb(255, 107, 107));
-
-                if (result.Feedback.Count == 0)
-                {
-                    FeedbackList.ItemsSource = null;
-                    AllGoodLabel.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    FeedbackList.ItemsSource = result.Feedback;
-                    AllGoodLabel.Visibility = Visibility.Collapsed;
-                }
-
-                if (angles.TryGetValue("LeftKnee", out double lk)) LeftKneeAngle.Text = $"{lk:F0}°";
-                if (angles.TryGetValue("RightKnee", out double rk)) RightKneeAngle.Text = $"{rk:F0}°";
-                if (angles.TryGetValue("LeftShoulder", out double ls)) LeftShoulderAngle.Text = $"{ls:F0}°";
-                if (angles.TryGetValue("RightShoulder", out double rs)) RightShoulderAngle.Text = $"{rs:F0}°";
-
+                UpdateScoreDisplay(result);
+                UpdateAngleReadouts(angles);
                 DrawSkeleton(skeleton);
             });
+        }
+
+        private void UpdateScoreDisplay(EvaluationResult result)
+        {
+            ScoreLabel.Text = result.ToString() + "%";
+            ScoreLabel.Foreground = result.IsPoseCorrect
+                ? new SolidColorBrush(Color.FromRgb(76, 175, 80))
+                : new SolidColorBrush(Color.FromRgb(255, 107, 107));
+
+            if (result.Feedback.Count == 0)
+            {
+                FeedbackList.ItemsSource = null;
+                AllGoodLabel.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                FeedbackList.ItemsSource = result.Feedback;
+                AllGoodLabel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void UpdateAngleReadouts(Dictionary<string, double> angles)
+        {
+            if (angles.TryGetValue("LeftKnee", out double lk)) LeftKneeAngle.Text = lk.ToString("F0") + "%";
+            if (angles.TryGetValue("RightKnee", out double rk)) RightKneeAngle.Text = rk.ToString("F0") + "%";
+            if (angles.TryGetValue("LeftShoulder", out double ls)) LeftShoulderAngle.Text = ls.ToString("F0") + "%";
+            if (angles.TryGetValue("RightShoulder", out double rs)) RightShoulderAngle.Text = rs.ToString("F0") + "%";
         }
 
         private Dictionary<string, double> BuildAngleDictionary(Skeleton skeleton)
@@ -238,20 +309,26 @@ namespace capstoneOneShot.Views
         private void EndSession()
         {
             _holdTimer?.Stop();
-            _kinectManager.ColorFrameReady -= OnColorFrameReady;
-            _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
-            _kinectManager.BodyStatusChanged -= OnBodyStatusChanged;
-            MessageBox.Show("Session complete! Great work.", "Session Ended",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            UnhookKinect();
+            OpenResultsScreen();
             Close();
+        }
+
+        private void OpenResultsScreen()
+        {
+            double avg = _frameScores.Count > 0
+                          ? _frameScores.Average()
+                          : 0;
+
+            var results = new SessionResultsView(_kinectManager, _currentPose);
+            results.SetResults(avg, _bestScore, _holdSeconds);
+            results.Show();
         }
 
         protected override void OnClosed(EventArgs e)
         {
             _holdTimer?.Stop();
-            _kinectManager.ColorFrameReady -= OnColorFrameReady;
-            _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
-            _kinectManager.BodyStatusChanged -= OnBodyStatusChanged;
+            UnhookKinect();
             base.OnClosed(e);
         }
     }

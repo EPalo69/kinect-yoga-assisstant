@@ -1,4 +1,8 @@
-﻿using System;
+﻿using capstoneOneShot.Models;
+using capstoneOneShot.Services;
+using HelixToolkit.Wpf;
+using Microsoft.Kinect;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,16 +10,15 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using Microsoft.Kinect;
-using capstoneOneShot.Models;
-using capstoneOneShot.Services;
 
 namespace capstoneOneShot.Views
 {
     public partial class MainWindow : Window
     {
         private KinectManager _kinectManager;
+        private AvatarService _avatarService;
 
+        // ── Hover gesture ────────────────────────────────────────────────
         private const double HoverRadius = 80;
         private const double HoldSeconds = 1.5;
         private const int FrameRate = 30;
@@ -25,15 +28,19 @@ namespace capstoneOneShot.Views
         private double _hoverProgress = 0;
         private DispatcherTimer _hoverTimer;
 
-        // No more _buttonCenters — Grid handles layout
-        private Dictionary<Grid, double> _buttonCircumferences = new Dictionary<Grid, double>();
+        private Dictionary<Grid, double> _buttonCircumferences
+            = new Dictionary<Grid, double>();
 
-        private const double AvatarOpacity = 0.28;
-        private const double BoneThickness = 2.0;
-        private const double JointDotRadius = 5.0;
-        private static readonly Color BoneColor = Color.FromArgb(180, 200, 220, 255);
-        private static readonly Color JointColor = Color.FromArgb(220, 255, 255, 255);
-        private static readonly Color ActiveHandColor = Color.FromArgb(255, 77, 208, 225);
+        private readonly Ellipse HandCursor = new Ellipse
+        {
+            Width = 28,
+            Height = 28,
+            Fill = new SolidColorBrush(Color.FromArgb(102, 77, 208, 225)),
+            Stroke = new SolidColorBrush(Color.FromRgb(77, 208, 225)),
+            StrokeThickness = 2,
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false
+        };
 
         public MainWindow()
         {
@@ -41,18 +48,76 @@ namespace capstoneOneShot.Views
             Loaded += OnLoaded;
         }
 
+        // ── Startup ──────────────────────────────────────────────────────
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // Set circumferences based on fixed button size in XAML (150px)
-            double circ = Math.PI * 150;
-            foreach (var btn in new[] { Btn_StartSession, Btn_ROMTest,
-                                         Btn_PoseLibrary, Btn_Settings, Btn_Exit })
-                _buttonCircumferences[btn] = circ;
-
+            BuildMenuButtons();
             SetupMouseAndKeyboard();
             StartKinect();
         }
 
+        // ── Button placement ─────────────────────────────────────────────
+        private void BuildMenuButtons()
+        {
+            MenuCanvas.UpdateLayout();
+
+            if (MenuCanvas.ActualWidth == 0 || MenuCanvas.ActualHeight == 0)
+            {
+                MenuCanvas.SizeChanged += (s, ev) =>
+                {
+                    MenuCanvas.SizeChanged -= null;
+                    PlaceButtons();
+                };
+                return;
+            }
+            PlaceButtons();
+        }
+
+        private void PlaceButtons()
+        {
+            double cw = MenuCanvas.ActualWidth;
+            double ch = MenuCanvas.ActualHeight;
+            double cx = cw / 2;
+            double cy = ch / 2;
+            double size = 150;
+            double circ = Math.PI * size;
+
+            var positions = new Dictionary<Grid, Point>
+            {
+                { Btn_StartSession, new Point(cx,        cy - 120) },
+                { Btn_ROMTest,      new Point(cx - 210,  cy - 20)  },
+                { Btn_PoseLibrary,  new Point(cx + 210,  cy - 20)  },
+                { Btn_Settings,     new Point(cx - 380,  cy + 60)  },
+                { Btn_Exit,         new Point(cx + 380,  cy + 60)  },
+            };
+
+            foreach (var kvp in positions)
+            {
+                var btn = kvp.Key;
+                var center = kvp.Value;
+
+                btn.Width = size;
+                btn.Height = size;
+
+                if (btn.Parent is Panel oldParent)
+                    oldParent.Children.Remove(btn);
+
+                Canvas.SetLeft(btn, center.X - size / 2);
+                Canvas.SetTop(btn, center.Y - size / 2);
+
+                if (!MenuCanvas.Children.Contains(btn))
+                    MenuCanvas.Children.Add(btn);
+
+                _buttonCircumferences[btn] = circ;
+            }
+
+            // Hand cursor always on top
+            if (MenuCanvas.Children.Contains(HandCursor))
+                MenuCanvas.Children.Remove(HandCursor);
+            MenuCanvas.Children.Add(HandCursor);
+        }
+
+        // ── Mouse + keyboard fallback ────────────────────────────────────
         private void SetupMouseAndKeyboard()
         {
             foreach (var btn in new[] { Btn_StartSession, Btn_ROMTest,
@@ -81,6 +146,7 @@ namespace capstoneOneShot.Views
             };
         }
 
+        // ── Kinect init ──────────────────────────────────────────────────
         private void StartKinect()
         {
             _kinectManager = new KinectManager();
@@ -103,8 +169,11 @@ namespace capstoneOneShot.Views
             _hoverTimer.Interval = TimeSpan.FromSeconds(1.0 / FrameRate);
             _hoverTimer.Tick += OnHoverTick;
             _hoverTimer.Start();
+
+            _avatarService = new AvatarService(AvatarViewport);
         }
 
+        // ── Body status pill ─────────────────────────────────────────────
         private void OnBodyStatusChanged(BodyDetectionStatus status)
         {
             Dispatcher.Invoke(() =>
@@ -125,17 +194,17 @@ namespace capstoneOneShot.Views
                         BodyStatusDot.Fill = new SolidColorBrush(Color.FromRgb(239, 68, 68));
                         BodyStatusLabel.Text = "No Body Detected";
                         BodyStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
-                        AvatarCanvas.Children.Clear();
+                        _avatarService?.Clear();
                         break;
                 }
             });
         }
 
+        // ── Skeleton frame ───────────────────────────────────────────────
         private void OnSkeletonFrameReady(Skeleton[] skeletons)
         {
             if (skeletons == null || skeletons.Length == 0) return;
             var skeleton = skeletons[0];
-
             var leftHand = skeleton.Joints[JointType.HandLeft];
             var rightHand = skeleton.Joints[JointType.HandRight];
             Joint activeHand = leftHand.Position.Y > rightHand.Position.Y
@@ -143,10 +212,8 @@ namespace capstoneOneShot.Views
 
             Dispatcher.Invoke(() =>
             {
-                double cw = ActualWidth;
-                double ch = ActualHeight;
-
-                DrawAvatar(skeleton, cw, ch, activeHand.JointType);
+                // Update 3D avatar
+                _avatarService?.Update(skeleton);
 
                 if (activeHand.TrackingState == JointTrackingState.NotTracked)
                 {
@@ -155,30 +222,28 @@ namespace capstoneOneShot.Views
                     return;
                 }
 
-                // Map hand to MenuGrid coordinate space
-                double hx = (activeHand.Position.X + 1.0) / 2.0 * MenuGrid.ActualWidth;
-                double hy = (1.0 - (activeHand.Position.Y + 1.0) / 2.0) * MenuGrid.ActualHeight;
+                // Map hand to MenuCanvas using CoordinateMapper
+                var colorPoint = _kinectManager.Sensor.CoordinateMapper
+                    .MapSkeletonPointToColorPoint(
+                        activeHand.Position,
+                        ColorImageFormat.RgbResolution640x480Fps30);
 
-                // Move hand cursor using Margin (Grid child, not Canvas)
-                var gridPt = this.TranslatePoint(new Point(
-                    (activeHand.Position.X + 1.0) / 2.0 * cw,
-                    (1.0 - (activeHand.Position.Y + 1.0) / 2.0) * ch), MenuGrid);
+                double hx = (colorPoint.X / 640.0) * MenuCanvas.ActualWidth;
+                double hy = (colorPoint.Y / 480.0) * MenuCanvas.ActualHeight;
 
-                HandCursor.Margin = new Thickness(
-                    gridPt.X - HandCursor.Width / 2,
-                    gridPt.Y - HandCursor.Height / 2,
-                    0, 0);
+                Canvas.SetLeft(HandCursor, hx - HandCursor.Width / 2);
+                Canvas.SetTop(HandCursor, hy - HandCursor.Height / 2);
                 HandCursor.Visibility = Visibility.Visible;
 
-                // Hit-test using TranslatePoint — no _buttonCenters needed
+                // Hit-test buttons
                 Grid nearest = null;
                 foreach (var btn in new[] { Btn_StartSession, Btn_ROMTest,
                                              Btn_PoseLibrary, Btn_Settings, Btn_Exit })
                 {
-                    var center = btn.TranslatePoint(
-                        new Point(btn.ActualWidth / 2, btn.ActualHeight / 2), MenuGrid);
-                    double dx = hx - center.X;
-                    double dy = hy - center.Y;
+                    double bx = Canvas.GetLeft(btn) + btn.Width / 2;
+                    double by = Canvas.GetTop(btn) + btn.Height / 2;
+                    double dx = hx - bx;
+                    double dy = hy - by;
                     double dist = Math.Sqrt(dx * dx + dy * dy);
                     if (dist <= HoverRadius) { nearest = btn; break; }
                 }
@@ -187,122 +252,7 @@ namespace capstoneOneShot.Views
             });
         }
 
-        private void DrawAvatar(Skeleton skeleton, double canvasW, double canvasH,
-                                JointType activeHandType)
-        {
-            AvatarCanvas.Children.Clear();
-
-            var bones = new[]
-            {
-                (JointType.Head,           JointType.ShoulderCenter),
-                (JointType.ShoulderCenter, JointType.ShoulderLeft),
-                (JointType.ShoulderCenter, JointType.ShoulderRight),
-                (JointType.ShoulderLeft,   JointType.ElbowLeft),
-                (JointType.ElbowLeft,      JointType.WristLeft),
-                (JointType.WristLeft,      JointType.HandLeft),
-                (JointType.ShoulderRight,  JointType.ElbowRight),
-                (JointType.ElbowRight,     JointType.WristRight),
-                (JointType.WristRight,     JointType.HandRight),
-                (JointType.ShoulderCenter, JointType.Spine),
-                (JointType.Spine,          JointType.HipCenter),
-                (JointType.HipCenter,      JointType.HipLeft),
-                (JointType.HipCenter,      JointType.HipRight),
-                (JointType.HipLeft,        JointType.KneeLeft),
-                (JointType.KneeLeft,       JointType.AnkleLeft),
-                (JointType.HipRight,       JointType.KneeRight),
-                (JointType.KneeRight,      JointType.AnkleRight),
-            };
-
-            foreach (var (a, b) in bones)
-                DrawAvatarBone(skeleton, a, b, canvasW, canvasH);
-
-            // Head circle
-            var headJoint = skeleton.Joints[JointType.Head];
-            if (headJoint.TrackingState != JointTrackingState.NotTracked)
-            {
-                var hp = MapToWindow(headJoint.Position, canvasW, canvasH);
-                var head = new Ellipse
-                {
-                    Width = 28,
-                    Height = 28,
-                    Stroke = new SolidColorBrush(JointColor),
-                    StrokeThickness = 2,
-                    Fill = new SolidColorBrush(Color.FromArgb(60, 200, 220, 255)),
-                    Opacity = AvatarOpacity * 2
-                };
-                Canvas.SetLeft(head, hp.X - 14);
-                Canvas.SetTop(head, hp.Y - 14);
-                AvatarCanvas.Children.Add(head);
-            }
-
-            // Joint dots
-            foreach (var jt in JointAngleCalculator.AnalysisJoints)
-            {
-                var joint = skeleton.Joints[jt];
-                if (joint.TrackingState == JointTrackingState.NotTracked) continue;
-
-                var pt = MapToWindow(joint.Position, canvasW, canvasH);
-                bool isActiveHand = (jt == activeHandType);
-
-                if (isActiveHand)
-                {
-                    var ring = new Ellipse
-                    {
-                        Width = 32,
-                        Height = 32,
-                        Stroke = new SolidColorBrush(ActiveHandColor),
-                        StrokeThickness = 1.5,
-                        Fill = Brushes.Transparent,
-                        Opacity = 0.5
-                    };
-                    Canvas.SetLeft(ring, pt.X - 16);
-                    Canvas.SetTop(ring, pt.Y - 16);
-                    AvatarCanvas.Children.Add(ring);
-                }
-
-                var dot = new Ellipse
-                {
-                    Width = isActiveHand ? 18 : JointDotRadius * 2,
-                    Height = isActiveHand ? 18 : JointDotRadius * 2,
-                    Fill = new SolidColorBrush(isActiveHand ? ActiveHandColor : JointColor),
-                    Opacity = isActiveHand ? 0.9 : AvatarOpacity * 1.5
-                };
-                Canvas.SetLeft(dot, pt.X - dot.Width / 2);
-                Canvas.SetTop(dot, pt.Y - dot.Height / 2);
-                AvatarCanvas.Children.Add(dot);
-            }
-        }
-
-        private void DrawAvatarBone(Skeleton skeleton, JointType a, JointType b,
-                                    double cw, double ch)
-        {
-            var j1 = skeleton.Joints[a];
-            var j2 = skeleton.Joints[b];
-            if (j1.TrackingState == JointTrackingState.NotTracked ||
-                j2.TrackingState == JointTrackingState.NotTracked) return;
-
-            var p1 = MapToWindow(j1.Position, cw, ch);
-            var p2 = MapToWindow(j2.Position, cw, ch);
-
-            AvatarCanvas.Children.Add(new Line
-            {
-                X1 = p1.X,
-                Y1 = p1.Y,
-                X2 = p2.X,
-                Y2 = p2.Y,
-                Stroke = new SolidColorBrush(BoneColor),
-                StrokeThickness = BoneThickness,
-                Opacity = AvatarOpacity
-            });
-        }
-
-        private Point MapToWindow(SkeletonPoint pos, double w, double h)
-        {
-            return new Point(
-                (pos.X + 1.0) / 2.0 * w,
-                (1.0 - (pos.Y + 1.0) / 2.0) * h);
-        }
-
+        // ── Hover timer ──────────────────────────────────────────────────
         private void OnHoverTick(object sender, EventArgs e)
         {
             if (_hoveredButton == null)
@@ -371,6 +321,7 @@ namespace capstoneOneShot.Views
             }
         }
 
+        // ── Fire button ──────────────────────────────────────────────────
         private void FireButton(Grid btn)
         {
             if (_isFiring) return;
@@ -384,26 +335,33 @@ namespace capstoneOneShot.Views
             switch (btn.Tag?.ToString())
             {
                 case "StartSession":
-                    var session = new SessionView(_kinectManager, DifficultyLevel.Beginner);
-                    session.Show(); Hide();
+                    var selection = new PoseSelectionView(_kinectManager);
+                    selection.Show();
+                    Hide();
                     break;
+
                 case "ROMTest":
                     var rom = new ROMTestView(_kinectManager);
                     bool? res = rom.ShowDialog();
                     if (res == true)
                     {
-                        var sess = new SessionView(_kinectManager, rom.ResultDifficulty);
-                        sess.Show(); Hide();
+                        var sel = new PoseSelectionView(_kinectManager);
+                        sel.Show();
+                        Hide();
                     }
                     break;
+
                 case "PoseLibrary":
-                    MessageBox.Show("Pose Library coming soon!", "Not Yet Implemented",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    var library = new PoseSelectionView(_kinectManager);
+                    library.Show();
+                    Hide();
                     break;
+
                 case "Settings":
                     MessageBox.Show("Settings coming soon!", "Not Yet Implemented",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     break;
+
                 case "Exit":
                     _kinectManager?.Shutdown();
                     Application.Current.Shutdown();
@@ -413,6 +371,7 @@ namespace capstoneOneShot.Views
             _isFiring = false;
         }
 
+        // ── Cleanup ──────────────────────────────────────────────────────
         protected override void OnClosed(EventArgs e)
         {
             _hoverTimer?.Stop();

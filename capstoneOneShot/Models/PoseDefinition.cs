@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,6 +27,8 @@ namespace capstoneOneShot.Models
         public string Description { get; set; }
         public DifficultyLevel Difficulty { get; set; }
         public int HoldSeconds { get; set; }
+        /// <summary>Filename of the reference image inside Assets/Poses/ (e.g. "mountain-pose.png").</summary>
+        public string ImageFileName { get; set; }
         public List<JointAngleRule> Rules { get; set; } = new List<JointAngleRule>();
     }
 }

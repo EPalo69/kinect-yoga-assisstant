@@ -121,8 +121,8 @@ namespace capstoneOneShot.Views
 
             Dispatcher.Invoke(() =>
             {
-                AngleReadout.Text = $"{currentAngle:F1} °";
-                BestAngleReadout.Text = $"{currentAngle:F1} °";
+                AngleReadout.Text = currentAngle.ToString("F1") + " °";
+                BestAngleReadout.Text = currentAngle.ToString("F1") + " °";
                 DrawSkeleton(skeleton);
             });
         }
