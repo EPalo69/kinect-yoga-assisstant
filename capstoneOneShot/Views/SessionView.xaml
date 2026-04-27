@@ -32,7 +32,7 @@
                 Margin="16,16,8,16" CornerRadius="12" ClipToBounds="True">
             <Grid>
                 <!-- Layer 1: Camera feed -->
-                <Image x:Name="CameraFeed" Stretch="UniformToFill"/>
+                <Image x:Name="CameraFeed" Stretch="Uniform"/>
 
                 <!-- Layer 2: Skeleton overlay -->
                 <Canvas x:Name="SkeletonCanvas"/>

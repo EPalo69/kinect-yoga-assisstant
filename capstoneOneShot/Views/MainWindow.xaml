@@ -1,11 +1,11 @@
 ﻿<Window x:Class="capstoneOneShot.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:helix="http://helix-toolkit.org/wpf"
-        Title="ZenPose" Height="800" Width="1200"
+        Title="YAMAS" Height="800" Width="1200"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         Background="#0A0F1E">
+    <!-- :helix="http://helix-toolkit.org/wpf" -->
 
     <!-- Root Grid: no RowDefinitions so all children stack in same cell -->
     <Grid>
@@ -23,9 +23,9 @@
 
             <!-- Title + pills -->
             <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,48,0,0">
-                <TextBlock Text="ZEN POSE" FontSize="52" FontWeight="Bold"
+                <TextBlock Text="YAMAS" FontSize="52" FontWeight="Bold"
                            Foreground="White" HorizontalAlignment="Center"/>
-                <TextBlock Text="YOGA ASSISTANT" FontSize="14" FontWeight="Light"
+                <TextBlock Text="KINECT YOGA ASSISTANT" FontSize="14" FontWeight="Light"
                            Foreground="#4DD0E1" HorizontalAlignment="Center"
                            Margin="0,4,0,0"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
@@ -54,6 +54,12 @@
             <Canvas Grid.Row="1" x:Name="MenuCanvas"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch">
+
+                <Canvas x:Name="SkeletonCanvas" IsHitTestVisible="False"
+                    Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Canvas}}"
+                    Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Canvas}}"
+                    Panel.ZIndex="998"/>
+
 
                 <!-- All buttons start at 0,0 — PlaceButtons() in code moves them -->
 
@@ -164,14 +170,13 @@
                        HorizontalAlignment="Center" Margin="0,0,0,24"/>
         </Grid>
 
-        <!-- LAYER 2: Avatar — same root Grid cell, zero layout influence -->
+        <!-- LAYER 2: Avatar — same root Grid cell, zero layout influence
         <helix:HelixViewport3D x:Name="AvatarViewport"
                                IsHitTestVisible="False"
                                Background="Transparent"
                                ShowCoordinateSystem="False"
                                ShowViewCube="False"
                                Panel.ZIndex="999">
-            <!-- Fixed camera looking at the figure -->
             <helix:HelixViewport3D.Camera>
                 <PerspectiveCamera Position="0,1,4"
                                    LookDirection="0,-0.2,-1"
@@ -179,20 +184,18 @@
                                    FieldOfView="45"/>
             </helix:HelixViewport3D.Camera>
 
-            <!-- Ambient light so figure is always visible -->
             <ModelVisual3D>
                 <ModelVisual3D.Content>
                     <AmbientLight Color="#AAAAAA"/>
                 </ModelVisual3D.Content>
             </ModelVisual3D>
 
-            <!-- Directional light from front-top -->
             <ModelVisual3D>
                 <ModelVisual3D.Content>
                     <DirectionalLight Color="White" Direction="0,-1,-1"/>
                 </ModelVisual3D.Content>
             </ModelVisual3D>
-        </helix:HelixViewport3D>
+        </helix:HelixViewport3D> -->
 
     </Grid>
 </Window>

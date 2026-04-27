@@ -226,6 +226,8 @@ namespace capstoneOneShot.Views
                 ["RightKnee"] = JointAngleCalculator.CalculateAngle(j[JointType.HipRight].Position, j[JointType.KneeRight].Position, j[JointType.AnkleRight].Position),
                 ["LeftHip"] = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderCenter].Position, j[JointType.HipLeft].Position, j[JointType.KneeLeft].Position),
                 ["RightHip"] = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderCenter].Position, j[JointType.HipRight].Position, j[JointType.KneeRight].Position),
+                ["LeftWrist"] = JointAngleCalculator.CalculateAngle(j[JointType.ElbowLeft].Position, j[JointType.WristLeft].Position, j[JointType.HandLeft].Position),
+                ["RightWrist"] = JointAngleCalculator.CalculateAngle(j[JointType.ElbowRight].Position, j[JointType.WristRight].Position, j[JointType.HandRight].Position),
             };
         }
 
@@ -292,9 +294,35 @@ namespace capstoneOneShot.Views
 
         private Point MapToCanvas(SkeletonPoint pos)
         {
-            double w = SkeletonCanvas.ActualWidth > 0 ? SkeletonCanvas.ActualWidth : 640;
-            double h = SkeletonCanvas.ActualHeight > 0 ? SkeletonCanvas.ActualHeight : 480;
-            return new Point((pos.X + 1.0) / 2.0 * w, (1.0 - (pos.Y + 1.0) / 2.0) * h);
+            double canvasW = SkeletonCanvas.ActualWidth > 0 ? SkeletonCanvas.ActualWidth : 640;
+            double canvasH = SkeletonCanvas.ActualHeight > 0 ? SkeletonCanvas.ActualHeight : 480;
+
+            const double sourceAspect = 640.0 / 480.0; // Kinect color stream native aspect
+            double canvasAspect = canvasW / canvasH;
+
+            double renderW, renderH, offsetX, offsetY;
+
+            if (canvasAspect > sourceAspect)
+            {
+                // Canvas is wider — pillarboxed (black bars on left/right)
+                renderH = canvasH;
+                renderW = canvasH * sourceAspect;
+                offsetX = (canvasW - renderW) / 2.0;
+                offsetY = 0;
+            }
+            else
+            {
+                // Canvas is taller — letterboxed (black bars on top/bottom)
+                renderW = canvasW;
+                renderH = canvasW / sourceAspect;
+                offsetX = 0;
+                offsetY = (canvasH - renderH) / 2.0;
+            }
+
+            double x = (pos.X + 1.0) / 2.0 * renderW + offsetX;
+            double y = (1.0 - (pos.Y + 1.0) / 2.0) * renderH + offsetY;
+
+            return new Point(x, y);
         }
 
         private void NextPoseButton_Click(object sender, RoutedEventArgs e)

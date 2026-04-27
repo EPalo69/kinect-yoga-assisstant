@@ -272,9 +272,16 @@ namespace capstoneOneShot.Views
         {
             ResultDifficulty = _romService.EvaluateDifficulty();
 
+            // Save ROM profile to session
+            UserSession.ROMProfile = _romService.BuildProfile(ResultDifficulty);
+
             MessageBox.Show(
-                $"ROM Test complete!\n\nYour recommended difficulty: {ResultDifficulty}\n\nWe'll start your session with {ResultDifficulty} poses.",
-                "Assessment Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                "ROM Test complete!\n\nYour recommended difficulty: "
+                + ResultDifficulty.ToString()
+                + "\n\nWe will filter poses based on your flexibility.",
+                "Assessment Complete",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
 
             Cleanup();
             DialogResult = true;

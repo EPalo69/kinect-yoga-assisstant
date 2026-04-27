@@ -160,6 +160,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\UserROMProfile.cs" />
+    <Compile Include="Models\UserSession.cs" />
     <Compile Include="Services\AvatarService.cs" />
     <Compile Include="Views\PoseDetailView.xaml.cs">
       <DependentUpon>PoseDetailView.xaml</DependentUpon>
@@ -241,7 +243,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Assets\Poses\mountain-pose.png" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="HelixToolkit" Version="3.1.2" />

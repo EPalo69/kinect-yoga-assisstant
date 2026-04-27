@@ -30,6 +30,26 @@ namespace capstoneOneShot.Services
             Tests = BuildTestSequence();
         }
 
+        public UserROMProfile BuildProfile(DifficultyLevel difficulty)
+        {
+            double shoulder = 0, knee = 180, hip = 180, lateral = 0;
+
+            if (_romResults.TryGetValue("LeftShoulder", out double ls)) shoulder = ls;
+            if (_romResults.TryGetValue("LeftKnee", out double lk)) knee = lk;
+            if (_romResults.TryGetValue("LeftHip", out double lh)) hip = lh;
+            if (_romResults.TryGetValue("RightShoulder", out double rs)) lateral = rs;
+
+            return new UserROMProfile
+            {
+                ShoulderFlexion = shoulder,
+                KneeFlexion = knee,
+                HipFlexion = hip,
+                LateralShoulder = lateral,
+                AssignedDifficulty = difficulty,
+                IsComplete = true
+            };
+        }
+
         // ---------------------------------------------------------------
         // Define the ROM test movements
         // ---------------------------------------------------------------
@@ -172,4 +192,6 @@ namespace capstoneOneShot.Services
         /// </summary>
         public bool TrackMinimum { get; set; } = false;
     }
+
+
 }

@@ -30,13 +30,34 @@ namespace capstoneOneShot.Views
         {
             InitializeComponent();
             _kinectManager = kinectManager;
-            _allPoses = PoseLibrary.GetAllPoses();
+
+            // Use ROM-filtered poses if available, otherwise all poses
+            _allPoses = UserSession.HasCompletedROM
+                ? PoseLibrary.GetPosesForUser(UserSession.ROMProfile)
+                : PoseLibrary.GetAllPoses();
 
             Loaded += (s, e) =>
             {
                 SetActiveFilter(FilterAll);
                 ShowPoses(_allPoses);
+                ShowROMBanner();
             };
+        }
+
+        private void ShowROMBanner()
+        {
+            if (UserSession.HasCompletedROM)
+            {
+                var profile = UserSession.ROMProfile;
+                ROMBannerLabel.Text = "Showing poses matched to your flexibility  •  "
+                                          + profile.AssignedDifficulty.ToString()
+                                          + " level";
+                ROMBanner.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ROMBanner.Visibility = Visibility.Collapsed;
+            }
         }
 
         // ── Filter buttons ───────────────────────────────────────────────

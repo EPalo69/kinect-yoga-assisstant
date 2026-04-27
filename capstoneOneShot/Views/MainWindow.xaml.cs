@@ -1,6 +1,6 @@
 ﻿using capstoneOneShot.Models;
 using capstoneOneShot.Services;
-using HelixToolkit.Wpf;
+//using HelixToolkit.Wpf;
 using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
@@ -16,12 +16,13 @@ namespace capstoneOneShot.Views
     public partial class MainWindow : Window
     {
         private KinectManager _kinectManager;
-        private AvatarService _avatarService;
+        //private AvatarService _avatarService;
 
         // ── Hover gesture ────────────────────────────────────────────────
         private const double HoverRadius = 80;
         private const double HoldSeconds = 1.5;
         private const int FrameRate = 30;
+        private const double JointRadius = 6;
         private bool _isFiring = false;
 
         private Grid _hoveredButton = null;
@@ -84,11 +85,11 @@ namespace capstoneOneShot.Views
 
             var positions = new Dictionary<Grid, Point>
             {
-                { Btn_StartSession, new Point(cx,        cy - 120) },
-                { Btn_ROMTest,      new Point(cx - 210,  cy - 20)  },
-                { Btn_PoseLibrary,  new Point(cx + 210,  cy - 20)  },
-                { Btn_Settings,     new Point(cx - 380,  cy + 60)  },
-                { Btn_Exit,         new Point(cx + 380,  cy + 60)  },
+                { Btn_StartSession, new Point(cx,        cy - 300) }, // was cy - 120
+                { Btn_ROMTest,      new Point(cx - 210,  cy - 200) }, // was cy - 20
+                { Btn_PoseLibrary,  new Point(cx + 210,  cy - 200) }, // was cy - 20
+                { Btn_Settings,     new Point(cx - 380,  cy - 120) }, // was cy + 60
+                { Btn_Exit,         new Point(cx + 380,  cy - 120) }, // was cy + 60
             };
 
             foreach (var kvp in positions)
@@ -170,7 +171,7 @@ namespace capstoneOneShot.Views
             _hoverTimer.Tick += OnHoverTick;
             _hoverTimer.Start();
 
-            _avatarService = new AvatarService(AvatarViewport);
+            //_avatarService = new AvatarService(AvatarViewport);
         }
 
         // ── Body status pill ─────────────────────────────────────────────
@@ -194,7 +195,7 @@ namespace capstoneOneShot.Views
                         BodyStatusDot.Fill = new SolidColorBrush(Color.FromRgb(239, 68, 68));
                         BodyStatusLabel.Text = "No Body Detected";
                         BodyStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
-                        _avatarService?.Clear();
+                        //_avatarService?.Clear();
                         break;
                 }
             });
@@ -209,11 +210,9 @@ namespace capstoneOneShot.Views
             var rightHand = skeleton.Joints[JointType.HandRight];
             Joint activeHand = leftHand.Position.Y > rightHand.Position.Y
                                ? leftHand : rightHand;
-
             Dispatcher.Invoke(() =>
             {
-                // Update 3D avatar
-                _avatarService?.Update(skeleton);
+                DrawSkeleton(skeleton);
 
                 if (activeHand.TrackingState == JointTrackingState.NotTracked)
                 {
@@ -222,14 +221,9 @@ namespace capstoneOneShot.Views
                     return;
                 }
 
-                // Map hand to MenuCanvas using CoordinateMapper
-                var colorPoint = _kinectManager.Sensor.CoordinateMapper
-                    .MapSkeletonPointToColorPoint(
-                        activeHand.Position,
-                        ColorImageFormat.RgbResolution640x480Fps30);
-
-                double hx = (colorPoint.X / 640.0) * MenuCanvas.ActualWidth;
-                double hy = (colorPoint.Y / 480.0) * MenuCanvas.ActualHeight;
+                // Use MapToCanvas so cursor is in the exact same coordinate space as the skeleton
+                var handPoint = MapToCanvas(activeHand.Position, MenuCanvas.ActualWidth, MenuCanvas.ActualHeight); double hx = handPoint.X;
+                double hy = handPoint.Y;
 
                 Canvas.SetLeft(HandCursor, hx - HandCursor.Width / 2);
                 Canvas.SetTop(HandCursor, hy - HandCursor.Height / 2);
@@ -238,7 +232,7 @@ namespace capstoneOneShot.Views
                 // Hit-test buttons
                 Grid nearest = null;
                 foreach (var btn in new[] { Btn_StartSession, Btn_ROMTest,
-                                             Btn_PoseLibrary, Btn_Settings, Btn_Exit })
+                                     Btn_PoseLibrary, Btn_Settings, Btn_Exit })
                 {
                     double bx = Canvas.GetLeft(btn) + btn.Width / 2;
                     double by = Canvas.GetTop(btn) + btn.Height / 2;
@@ -250,6 +244,93 @@ namespace capstoneOneShot.Views
 
                 UpdateHover(nearest);
             });
+        }
+
+        private void DrawSkeleton(Skeleton skeleton)
+        {
+            SkeletonCanvas.Children.Clear();
+            var bones = new[]
+            {
+                (JointType.Head,           JointType.ShoulderCenter),
+                (JointType.ShoulderCenter, JointType.ShoulderLeft),
+                (JointType.ShoulderCenter, JointType.ShoulderRight),
+                (JointType.ShoulderLeft,   JointType.ElbowLeft),
+                (JointType.ElbowLeft,      JointType.WristLeft),
+                (JointType.ShoulderRight,  JointType.ElbowRight),
+                (JointType.ElbowRight,     JointType.WristRight),
+                (JointType.ShoulderCenter, JointType.HipCenter),
+                (JointType.HipCenter,      JointType.HipLeft),
+                (JointType.HipCenter,      JointType.HipRight),
+                (JointType.HipLeft,        JointType.KneeLeft),
+                (JointType.KneeLeft,       JointType.AnkleLeft),
+                (JointType.HipRight,       JointType.KneeRight),
+                (JointType.KneeRight,      JointType.AnkleRight),
+            };
+            foreach (var (s, e) in bones) DrawBone(skeleton, s, e);
+            foreach (var jt in JointAngleCalculator.AnalysisJoints) DrawJoint(skeleton.Joints[jt]);
+        }
+
+        private void DrawBone(Skeleton skeleton, JointType a, JointType b)
+        {
+            var j1 = skeleton.Joints[a];
+            var j2 = skeleton.Joints[b];
+            if (j1.TrackingState == JointTrackingState.NotTracked ||
+                j2.TrackingState == JointTrackingState.NotTracked) return;
+
+            var p1 = MapToCanvas(j1.Position, SkeletonCanvas.ActualWidth, SkeletonCanvas.ActualHeight);
+            var p2 = MapToCanvas(j2.Position, SkeletonCanvas.ActualWidth, SkeletonCanvas.ActualHeight);
+            SkeletonCanvas.Children.Add(new Line
+            {
+                X1 = p1.X,
+                Y1 = p1.Y,
+                X2 = p2.X,
+                Y2 = p2.Y,
+                Stroke = new SolidColorBrush(Color.FromArgb(200, 100, 181, 246)),
+                StrokeThickness = 3
+            });
+        }
+
+        private void DrawJoint(Joint joint)
+        {
+            if (joint.TrackingState == JointTrackingState.NotTracked) return;
+            var p = MapToCanvas(joint.Position, SkeletonCanvas.ActualWidth, SkeletonCanvas.ActualHeight);
+            var c = new Ellipse
+            {
+                Width = JointRadius * 2,
+                Height = JointRadius * 2,
+                Fill = Brushes.White,
+                Stroke = new SolidColorBrush(Color.FromRgb(100, 181, 246)),
+                StrokeThickness = 2
+            };
+            Canvas.SetLeft(c, p.X - JointRadius);
+            Canvas.SetTop(c, p.Y - JointRadius);
+            SkeletonCanvas.Children.Add(c);
+        }
+
+        private Point MapToCanvas(SkeletonPoint pos, double canvasW, double canvasH)
+        {
+            const double sourceAspect = 640.0 / 480.0;
+            double canvasAspect = canvasW / canvasH;
+            double renderW, renderH, offsetX, offsetY;
+
+            if (canvasAspect > sourceAspect)
+            {
+                renderH = canvasH;
+                renderW = canvasH * sourceAspect;
+                offsetX = (canvasW - renderW) / 2.0;
+                offsetY = 0;
+            }
+            else
+            {
+                renderW = canvasW;
+                renderH = canvasW / sourceAspect;
+                offsetX = 0;
+                offsetY = (canvasH - renderH) / 2.0;
+            }
+
+            double x = (pos.X + 1.0) / 2.0 * renderW + offsetX;
+            double y = (1.0 - (pos.Y + 1.0) / 2.0) * renderH + offsetY;
+            return new Point(x, y);
         }
 
         // ── Hover timer ──────────────────────────────────────────────────
