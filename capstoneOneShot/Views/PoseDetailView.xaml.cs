@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -35,30 +35,24 @@ namespace capstoneOneShot.Views
 
         private void PopulateUI()
         {
-            PoseNameBig.Text = _pose.Name;
-            PoseNameLabel.Text = _pose.Name;
-            DifficultyLabel.Text = _pose.Difficulty.ToString();
-            DescriptionLabel.Text = _pose.Description;
-            HoldTimeLabel.Text = $"{_pose.HoldSeconds}s";
-            JointCountLabel.Text = _pose.Rules.Count.ToString();
-            RulesList.ItemsSource = _pose.Rules;
+            // Load the image based on PoseDefinition.ImageFileName
+            if (!string.IsNullOrEmpty(_pose.ImageFileName))
+            {
+                try
+                {
+                    string packUri = "pack://application:,,,/Assets/Poses/" + _pose.ImageFileName;
+                    PoseImage.Source = new BitmapImage(new Uri(packUri, UriKind.Absolute));
+                }
+                catch { }
+            }
 
-            // Color difficulty badge
-            if (_pose.Difficulty == DifficultyLevel.Beginner)
-                DifficultyBadge.Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(6, 78, 59));
-            else if (_pose.Difficulty == DifficultyLevel.Intermediate)
-                DifficultyBadge.Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(92, 52, 10));
-            else if (_pose.Difficulty == DifficultyLevel.Advanced)
-                DifficultyBadge.Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(76, 5, 25));
-            else
-                DifficultyBadge.Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(31, 41, 55));
+            HoldTimeLeftLabel.Text = $"{_pose.HoldSeconds}s hold";
+
+            RulesList.Items.Clear(); // Clear XAML defaults
+            RulesList.ItemsSource = _pose.Rules;
         }
 
-        private void BeginButton_Click(object sender, RoutedEventArgs e)
+        private void BeginButton_Click(object sender, MouseButtonEventArgs e)
         {
             // Pass a single-pose session
             var poses = new System.Collections.Generic.List<PoseDefinition> { _pose };
@@ -67,7 +61,7 @@ namespace capstoneOneShot.Views
             Close();
         }
 
-        private void BackButton_Click(object sender, RoutedEventArgs e)
+        private void BackButton_Click(object sender, MouseButtonEventArgs e)
         {
             var selection = new PoseSelectionView(_kinectManager);
             selection.Show();

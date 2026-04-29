@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,7 +24,7 @@ namespace capstoneOneShot.Views
     {
         private readonly KinectManager _kinectManager;
         private readonly List<PoseDefinition> _allPoses;
-        private Button _activeFilter;
+        private Grid _activeFilter;
 
         public PoseSelectionView(KinectManager kinectManager)
         {
@@ -61,9 +61,9 @@ namespace capstoneOneShot.Views
         }
 
         // ── Filter buttons ───────────────────────────────────────────────
-        private void Filter_Click(object sender, RoutedEventArgs e)
+        private void Filter_Click(object sender, MouseButtonEventArgs e)
         {
-            var btn = (Button)sender;
+            var btn = (Grid)sender;
             SetActiveFilter(btn);
 
             var tag = btn.Tag?.ToString();
@@ -74,22 +74,22 @@ namespace capstoneOneShot.Views
             ShowPoses(filtered);
         }
 
-        private void SetActiveFilter(Button btn)
+        private void SetActiveFilter(Grid btn)
         {
             // Reset previous
             if (_activeFilter != null)
             {
-                _activeFilter.Background = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(17, 24, 39));
-                _activeFilter.Foreground = new System.Windows.Media.SolidColorBrush(
-                    System.Windows.Media.Color.FromRgb(156, 163, 175));
+                var bg = _activeFilter.Children.OfType<Ellipse>().FirstOrDefault(x => x.Name.StartsWith("Bg_"));
+                var txt = _activeFilter.Children.OfType<TextBlock>().FirstOrDefault(x => x.Name.StartsWith("Txt_"));
+                if (bg != null) bg.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(17, 24, 39));
+                if (txt != null) txt.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(156, 163, 175));
             }
 
             _activeFilter = btn;
-            btn.Background = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(77, 208, 225));
-            btn.Foreground = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Colors.Black);
+            var bgNew = btn.Children.OfType<Ellipse>().FirstOrDefault(x => x.Name.StartsWith("Bg_"));
+            var txtNew = btn.Children.OfType<TextBlock>().FirstOrDefault(x => x.Name.StartsWith("Txt_"));
+            if (bgNew != null) bgNew.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(77, 208, 225));
+            if (txtNew != null) txtNew.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
         }
 
         private void ShowPoses(List<PoseDefinition> poses)
@@ -100,15 +100,15 @@ namespace capstoneOneShot.Views
         // ── Pose card click ──────────────────────────────────────────────
         private void PoseCard_Click(object sender, MouseButtonEventArgs e)
         {
-            var border = (Border)sender;
-            var pose = (PoseDefinition)border.Tag;
+            var grid = (Grid)sender;
+            var pose = (PoseDefinition)grid.Tag;
 
             var detailView = new PoseDetailView(_kinectManager, pose);
             detailView.Show();
             Close();
         }
 
-        private void BackButton_Click(object sender, RoutedEventArgs e)
+        private void BackButton_Click(object sender, MouseButtonEventArgs e)
         {
             var main = new MainWindow();
             main.Show();

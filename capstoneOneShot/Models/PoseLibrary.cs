@@ -71,6 +71,7 @@ namespace capstoneOneShot.Models
                     Description = "Stand tall with feet together, arms at your sides, and spine straight.",
                     Difficulty  = DifficultyLevel.Beginner,
                     HoldSeconds = 20,
+                    ImageFileName = "mountain-pose.png",
                     Rules = new List<JointAngleRule>
                     {
                         // A — Left Elbow: arm extended at side ~175°, ±10°
