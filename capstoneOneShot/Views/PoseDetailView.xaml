@@ -7,12 +7,22 @@
         Background="#0A0F1E">
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <!-- Left: visual area -->
-            <ColumnDefinition Width="420"/>
-            <!-- Right: details -->
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <!-- Left: visual area -->
+                <ColumnDefinition Width="420"/>
+                <!-- Right: details -->
+            </Grid.ColumnDefinitions>
+
+        <!-- Skeleton and Menu Canvas Overlays -->
+        <Canvas x:Name="SkeletonCanvas" Grid.ColumnSpan="2" Panel.ZIndex="10" IsHitTestVisible="False"/>
+        <Canvas x:Name="MenuCanvas" Grid.ColumnSpan="2" Panel.ZIndex="20" IsHitTestVisible="False"/>
 
         <!-- LEFT: Visual area -->
         <Border Grid.Column="0" Background="#0D0D1A"
@@ -110,5 +120,12 @@
 
             </Grid>
         </Border>
+        </Grid>
+
+        <!-- Footer -->
+        <TextBlock Grid.Row="1"
+                   Text="Hover your hand over a button to select  •  Hold to confirm"
+                   Foreground="#374151" FontSize="12"
+                   HorizontalAlignment="Center" Margin="0,0,0,24"/>
     </Grid>
 </Window>

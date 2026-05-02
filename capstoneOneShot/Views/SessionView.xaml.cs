@@ -21,6 +21,10 @@ namespace capstoneOneShot.Views
         private int _currentPoseIndex = 0;
         private int _holdSeconds = 0;
         private DispatcherTimer _holdTimer;
+        
+        private PauseGestureService _pauseService;
+        private bool _isPaused = false;
+        private BodyDetectionStatus _currentBodyStatus = BodyDetectionStatus.NotDetected;
 
         private const double JointRadius = 6;
 
@@ -57,7 +61,7 @@ namespace capstoneOneShot.Views
 
         private void SetupUI(string difficultyText)
         {
-            DifficultyLabel.Text = difficultyText;
+            // Info removed from UI
         }
 
         private void SetupKinect()
@@ -65,12 +69,22 @@ namespace capstoneOneShot.Views
             _kinectManager.ColorFrameReady += OnColorFrameReady;
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged += OnBodyStatusChanged;
+
+            _pauseService = new PauseGestureService(_kinectManager);
+            _pauseService.PauseDetected += OnPauseTriggered;
+            _pauseService.Enable(PauseGestureCanvas);
         }
         private void UnhookKinect()
         {
             _kinectManager.ColorFrameReady -= OnColorFrameReady;
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged -= OnBodyStatusChanged;
+
+            if (_pauseService != null)
+            {
+                _pauseService.Disable();
+                _pauseService.PauseDetected -= OnPauseTriggered;
+            }
         }
 
         private void LoadPose(int index)
@@ -82,7 +96,6 @@ namespace capstoneOneShot.Views
             var pose = _poses[index];
             CurrentPoseLabel.Text = pose.Name;
             PoseDescriptionLabel.Text = pose.Description;
-            PoseCountLabel.Text = $"Pose {index + 1} of {_poses.Count}";
             ScoreLabel.Text = "0%";
             HoldTimerLabel.Text = "0s";
             FeedbackList.ItemsSource = null;
@@ -121,8 +134,33 @@ namespace capstoneOneShot.Views
         {
             _holdTimer = new DispatcherTimer();
             _holdTimer.Interval = TimeSpan.FromSeconds(1);
-            _holdTimer.Tick += (s, e) => { _holdSeconds++; HoldTimerLabel.Text = $"{_holdSeconds}s"; };
+            _holdTimer.Tick += HoldTimer_Tick;
             _holdTimer.Start();
+        }
+
+        private void HoldTimer_Tick(object sender, EventArgs e)
+        {
+            _holdSeconds++;
+            HoldTimerLabel.Text = $"{_holdSeconds}s";
+
+            int targetHold = _currentPose.HoldSeconds > 0 ? _currentPose.HoldSeconds : 10;
+            if (_holdSeconds >= targetHold)
+            {
+                _holdTimer.Stop();
+                AdvancePose();
+            }
+        }
+
+        private void AdvancePose()
+        {
+            _currentPoseIndex++;
+            _holdSeconds = 0;
+            LoadPose(_currentPoseIndex);
+            
+            if (_currentPoseIndex < _poses.Count)
+            {
+                _holdTimer?.Start();
+            }
         }
 
         private void OnColorFrameReady(System.Windows.Media.Imaging.BitmapSource bitmap)
@@ -132,6 +170,7 @@ namespace capstoneOneShot.Views
 
         private void OnBodyStatusChanged(BodyDetectionStatus status)
         {
+            _currentBodyStatus = status;
             Dispatcher.Invoke(() =>
             {
                 switch (status)
@@ -139,17 +178,14 @@ namespace capstoneOneShot.Views
                     case BodyDetectionStatus.Detected:
                         NoBodyOverlay.Visibility = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
-                        SetTrackingStatus("Fully Tracked", "#4CAF50");
                         break;
                     case BodyDetectionStatus.PartialDetect:
                         NoBodyOverlay.Visibility = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Visible;
-                        SetTrackingStatus("Partial Tracking", "#F59E0B");
                         break;
                     case BodyDetectionStatus.NotDetected:
                         NoBodyOverlay.Visibility = Visibility.Visible;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
-                        SetTrackingStatus("Not Detected", "#EF4444");
                         ScoreLabel.Text = "0%";
                         FeedbackList.ItemsSource = null;
                         AllGoodLabel.Visibility = Visibility.Collapsed;
@@ -160,10 +196,7 @@ namespace capstoneOneShot.Views
 
         private void SetTrackingStatus(string text, string hex)
         {
-            var color = (Color)ColorConverter.ConvertFromString(hex);
-            TrackingStatusLabel.Text = text;
-            TrackingStatusLabel.Foreground = new SolidColorBrush(color);
-            TrackingDot.Fill = new SolidColorBrush(color);
+            // UI elements removed
         }
 
         private void OnSkeletonFrameReady(Skeleton[] skeletons)
@@ -181,7 +214,6 @@ namespace capstoneOneShot.Views
             Dispatcher.Invoke(() =>
             {
                 UpdateScoreDisplay(result);
-                UpdateAngleReadouts(angles);
                 DrawSkeleton(skeleton);
             });
         }
@@ -207,10 +239,7 @@ namespace capstoneOneShot.Views
 
         private void UpdateAngleReadouts(Dictionary<string, double> angles)
         {
-            if (angles.TryGetValue("LeftKnee", out double lk)) LeftKneeAngle.Text = lk.ToString("F0") + "%";
-            if (angles.TryGetValue("RightKnee", out double rk)) RightKneeAngle.Text = rk.ToString("F0") + "%";
-            if (angles.TryGetValue("LeftShoulder", out double ls)) LeftShoulderAngle.Text = ls.ToString("F0") + "%";
-            if (angles.TryGetValue("RightShoulder", out double rs)) RightShoulderAngle.Text = rs.ToString("F0") + "%";
+            // UI elements removed
         }
 
         private Dictionary<string, double> BuildAngleDictionary(Skeleton skeleton)
@@ -325,14 +354,51 @@ namespace capstoneOneShot.Views
             return new Point(x, y);
         }
 
-        private void NextPoseButton_Click(object sender, RoutedEventArgs e)
+        // ── Pause and Navigation Logic ────────────────────────────────────
+
+        private void OnPauseTriggered(object sender, EventArgs e)
         {
-            _currentPoseIndex++;
-            _holdSeconds = 0;
-            LoadPose(_currentPoseIndex);
+            if (_isPaused)
+            {
+                ResumeSession();
+            }
+            else
+            {
+                _isPaused = true;
+                _holdTimer?.Stop();
+                PauseOverlay.Visibility = Visibility.Visible;
+            }
         }
 
-        private void EndSessionButton_Click(object sender, RoutedEventArgs e) => EndSession();
+        private void ResumeButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResumeSession();
+        }
+
+        private void ResumeSession()
+        {
+            _isPaused = false;
+            PauseOverlay.Visibility = Visibility.Collapsed;
+            if (_currentBodyStatus == BodyDetectionStatus.Detected)
+            {
+                _holdTimer?.Start();
+            }
+        }
+
+        private void SelectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            var sel = new PoseSelectionView(_kinectManager);
+            sel.Show();
+            UnhookKinect();
+            Close();
+        }
+
+        private void EndSessionButton_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.MainWindow.Show();
+            UnhookKinect();
+            Close();
+        }
 
         private void EndSession()
         {

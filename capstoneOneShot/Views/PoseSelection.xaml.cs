@@ -25,10 +25,12 @@ namespace capstoneOneShot.Views
         private readonly KinectManager _kinectManager;
         private readonly List<PoseDefinition> _allPoses;
         private Grid _activeFilter;
+        private PointerSelectionService _pointerService;
 
         public PoseSelectionView(KinectManager kinectManager)
         {
             InitializeComponent();
+            TransitionHelper.ApplyFadeInTransition(this);
             _kinectManager = kinectManager;
 
             // Use ROM-filtered poses if available, otherwise all poses
@@ -38,9 +40,17 @@ namespace capstoneOneShot.Views
 
             Loaded += (s, e) =>
             {
-                SetActiveFilter(FilterAll);
+                _pointerService = new PointerSelectionService(MenuCanvas);
+                _pointerService.Start();
+
+                // Register static buttons
+                _pointerService.RegisterButton(Btn_Back, Math.PI * 100, () => BackButton_Click(null, null));
+
+                _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
+
                 ShowPoses(_allPoses);
                 ShowROMBanner();
+                _pointerService.BringCursorToFront();
             };
         }
 
@@ -60,59 +70,101 @@ namespace capstoneOneShot.Views
             }
         }
 
-        // ── Filter buttons ───────────────────────────────────────────────
-        private void Filter_Click(object sender, MouseButtonEventArgs e)
-        {
-            var btn = (Grid)sender;
-            SetActiveFilter(btn);
-
-            var tag = btn.Tag?.ToString();
-            var filtered = tag == "All"
-                ? _allPoses
-                : _allPoses.Where(p => p.Difficulty.ToString() == tag).ToList();
-
-            ShowPoses(filtered);
-        }
-
-        private void SetActiveFilter(Grid btn)
-        {
-            // Reset previous
-            if (_activeFilter != null)
-            {
-                var bg = _activeFilter.Children.OfType<Ellipse>().FirstOrDefault(x => x.Name.StartsWith("Bg_"));
-                var txt = _activeFilter.Children.OfType<TextBlock>().FirstOrDefault(x => x.Name.StartsWith("Txt_"));
-                if (bg != null) bg.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(17, 24, 39));
-                if (txt != null) txt.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(156, 163, 175));
-            }
-
-            _activeFilter = btn;
-            var bgNew = btn.Children.OfType<Ellipse>().FirstOrDefault(x => x.Name.StartsWith("Bg_"));
-            var txtNew = btn.Children.OfType<TextBlock>().FirstOrDefault(x => x.Name.StartsWith("Txt_"));
-            if (bgNew != null) bgNew.Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(77, 208, 225));
-            if (txtNew != null) txtNew.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
-        }
-
         private void ShowPoses(List<PoseDefinition> poses)
         {
             PoseList.ItemsSource = poses;
         }
 
         // ── Pose card click ──────────────────────────────────────────────
-        private void PoseCard_Click(object sender, MouseButtonEventArgs e)
+        private void PoseCard_Loaded(object sender, RoutedEventArgs e)
         {
             var grid = (Grid)sender;
-            var pose = (PoseDefinition)grid.Tag;
+            double circ = Math.PI * 300; // 300 is the width/height
+            _pointerService.RegisterButton(grid, circ, () => SimulatePoseClick(grid));
+            grid.MouseEnter += (s, ev) => _pointerService.SetHover(grid);
+            grid.MouseLeave += (s, ev) => _pointerService.ClearHover();
+        }
 
-            var detailView = new PoseDetailView(_kinectManager, pose);
-            detailView.Show();
-            Close();
+        private void PoseCard_Unloaded(object sender, RoutedEventArgs e)
+        {
+            var grid = (Grid)sender;
+            _pointerService.UnregisterButton(grid);
+        }
+
+        private void SimulatePoseClick(Grid grid)
+        {
+            var pose = (PoseDefinition)grid.Tag;
+            TransitionHelper.FadeOutAndClose(this, () => {
+                var detailView = new PoseDetailView(_kinectManager, pose);
+                detailView.Show();
+            });
+        }
+
+        private void PoseCard_Click(object sender, MouseButtonEventArgs e)
+        {
+            SimulatePoseClick((Grid)sender);
         }
 
         private void BackButton_Click(object sender, MouseButtonEventArgs e)
         {
-            var main = new MainWindow();
-            main.Show();
-            Close();
+            TransitionHelper.FadeOutAndClose(this, () => {
+                Application.Current.MainWindow.Show();
+            });
+        }
+
+        // ── Kinect logic ─────────────────────────────────────────────────
+        private void OnSkeletonFrameReady(Microsoft.Kinect.Skeleton[] skeletons)
+        {
+            if (skeletons == null || skeletons.Length == 0) return;
+            var skeleton = skeletons[0];
+            var leftHand = skeleton.Joints[Microsoft.Kinect.JointType.HandLeft];
+            var rightHand = skeleton.Joints[Microsoft.Kinect.JointType.HandRight];
+            var activeHand = leftHand.Position.Y > rightHand.Position.Y ? leftHand : rightHand;
+
+            Dispatcher.Invoke(() =>
+            {
+                if (activeHand.TrackingState == Microsoft.Kinect.JointTrackingState.NotTracked)
+                {
+                    _pointerService.ProcessHandPosition(new Point(0, 0), false);
+                    return;
+                }
+
+                var handPoint = MapToCanvas(activeHand.Position, MenuCanvas.ActualWidth, MenuCanvas.ActualHeight);
+                _pointerService.ProcessHandPosition(handPoint, true);
+            });
+        }
+
+        private Point MapToCanvas(Microsoft.Kinect.SkeletonPoint pos, double canvasW, double canvasH)
+        {
+            const double sourceAspect = 640.0 / 480.0;
+            double canvasAspect = canvasW / canvasH;
+            double renderW, renderH, offsetX, offsetY;
+
+            if (canvasAspect > sourceAspect)
+            {
+                renderH = canvasH;
+                renderW = canvasH * sourceAspect;
+                offsetX = (canvasW - renderW) / 2.0;
+                offsetY = 0;
+            }
+            else
+            {
+                renderW = canvasW;
+                renderH = canvasW / sourceAspect;
+                offsetX = 0;
+                offsetY = (canvasH - renderH) / 2.0;
+            }
+
+            double x = (pos.X + 1.0) / 2.0 * renderW + offsetX;
+            double y = (1.0 - (pos.Y + 1.0) / 2.0) * renderH + offsetY;
+            return new Point(x, y);
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
+            _pointerService?.Stop();
+            base.OnClosed(e);
         }
     }
 }

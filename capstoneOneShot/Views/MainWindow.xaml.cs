@@ -1,4 +1,4 @@
-﻿using capstoneOneShot.Models;
+using capstoneOneShot.Models;
 using capstoneOneShot.Services;
 //using HelixToolkit.Wpf;
 using Microsoft.Kinect;
@@ -18,40 +18,21 @@ namespace capstoneOneShot.Views
         private KinectManager _kinectManager;
         //private AvatarService _avatarService;
 
-        // ── Hover gesture ────────────────────────────────────────────────
-        private const double HoverRadius = 80;
-        private const double HoldSeconds = 1.5;
-        private const int FrameRate = 30;
+        private PointerSelectionService _pointerService;
+
         private const double JointRadius = 6;
-        private bool _isFiring = false;
-
-        private Grid _hoveredButton = null;
-        private double _hoverProgress = 0;
-        private DispatcherTimer _hoverTimer;
-
-        private Dictionary<Grid, double> _buttonCircumferences
-            = new Dictionary<Grid, double>();
-
-        private readonly Ellipse HandCursor = new Ellipse
-        {
-            Width = 28,
-            Height = 28,
-            Fill = new SolidColorBrush(Color.FromArgb(102, 77, 208, 225)),
-            Stroke = new SolidColorBrush(Color.FromRgb(77, 208, 225)),
-            StrokeThickness = 2,
-            Visibility = Visibility.Collapsed,
-            IsHitTestVisible = false
-        };
 
         public MainWindow()
         {
             InitializeComponent();
+            TransitionHelper.ApplyFadeInTransition(this);
             Loaded += OnLoaded;
         }
 
         // ── Startup ──────────────────────────────────────────────────────
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            _pointerService = new PointerSelectionService(MenuCanvas);
             BuildMenuButtons();
             SetupMouseAndKeyboard();
             StartKinect();
@@ -109,13 +90,51 @@ namespace capstoneOneShot.Views
                 if (!MenuCanvas.Children.Contains(btn))
                     MenuCanvas.Children.Add(btn);
 
-                _buttonCircumferences[btn] = circ;
+                Action action = null;
+                switch (btn.Tag?.ToString())
+                {
+                    case "StartSession":
+                        action = () => {
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var selection = new PoseSelectionView(_kinectManager);
+                                selection.Show();
+                            });
+                        };
+                        break;
+                    case "ROMTest":
+                        action = () => {
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var rom = new ROMTestView(_kinectManager);
+                                rom.Show();
+                            });
+                        };
+                        break;
+                    case "PoseLibrary":
+                        action = () => {
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var library = new PoseSelectionView(_kinectManager);
+                                library.Show();
+                            });
+                        };
+                        break;
+                    case "Settings":
+                        action = () => {
+                            MessageBox.Show("Settings coming soon!", "Not Yet Implemented",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+                        };
+                        break;
+                    case "Exit":
+                        action = () => {
+                            _kinectManager?.Shutdown();
+                            Application.Current.Shutdown();
+                        };
+                        break;
+                }
+
+                _pointerService.RegisterButton(btn, circ, action);
             }
 
-            // Hand cursor always on top
-            if (MenuCanvas.Children.Contains(HandCursor))
-                MenuCanvas.Children.Remove(HandCursor);
-            MenuCanvas.Children.Add(HandCursor);
+            _pointerService.BringCursorToFront();
         }
 
         // ── Mouse + keyboard fallback ────────────────────────────────────
@@ -125,9 +144,9 @@ namespace capstoneOneShot.Views
                                          Btn_PoseLibrary, Btn_Settings, Btn_Exit })
             {
                 var b = btn;
-                b.MouseEnter += (s, e) => UpdateHover(b);
-                b.MouseLeave += (s, e) => UpdateHover(null);
-                b.MouseLeftButtonUp += (s, e) => { _hoverProgress = 0; FireButton(b); };
+                b.MouseEnter += (s, e) => _pointerService.SetHover(b);
+                b.MouseLeave += (s, e) => _pointerService.ClearHover();
+                b.MouseLeftButtonUp += (s, e) => { _pointerService.ClearHover(); _pointerService.ManualFire(b); };
             }
 
             KeyDown += (s, e) =>
@@ -135,14 +154,14 @@ namespace capstoneOneShot.Views
                 switch (e.Key)
                 {
                     case System.Windows.Input.Key.D1:
-                    case System.Windows.Input.Key.NumPad1: FireButton(Btn_StartSession); break;
+                    case System.Windows.Input.Key.NumPad1: _pointerService.ManualFire(Btn_StartSession); break;
                     case System.Windows.Input.Key.D2:
-                    case System.Windows.Input.Key.NumPad2: FireButton(Btn_ROMTest); break;
+                    case System.Windows.Input.Key.NumPad2: _pointerService.ManualFire(Btn_ROMTest); break;
                     case System.Windows.Input.Key.D3:
-                    case System.Windows.Input.Key.NumPad3: FireButton(Btn_PoseLibrary); break;
+                    case System.Windows.Input.Key.NumPad3: _pointerService.ManualFire(Btn_PoseLibrary); break;
                     case System.Windows.Input.Key.D4:
-                    case System.Windows.Input.Key.NumPad4: FireButton(Btn_Settings); break;
-                    case System.Windows.Input.Key.Escape: FireButton(Btn_Exit); break;
+                    case System.Windows.Input.Key.NumPad4: _pointerService.ManualFire(Btn_Settings); break;
+                    case System.Windows.Input.Key.Escape: _pointerService.ManualFire(Btn_Exit); break;
                 }
             };
         }
@@ -166,10 +185,7 @@ namespace capstoneOneShot.Views
                 KinectStatusLabel.Text = "Kinect Not Connected";
             }
 
-            _hoverTimer = new DispatcherTimer();
-            _hoverTimer.Interval = TimeSpan.FromSeconds(1.0 / FrameRate);
-            _hoverTimer.Tick += OnHoverTick;
-            _hoverTimer.Start();
+            _pointerService.Start();
 
             //_avatarService = new AvatarService(AvatarViewport);
         }
@@ -177,6 +193,7 @@ namespace capstoneOneShot.Views
         // ── Body status pill ─────────────────────────────────────────────
         private void OnBodyStatusChanged(BodyDetectionStatus status)
         {
+            if (!this.IsVisible) return;
             Dispatcher.Invoke(() =>
             {
                 switch (status)
@@ -204,6 +221,7 @@ namespace capstoneOneShot.Views
         // ── Skeleton frame ───────────────────────────────────────────────
         private void OnSkeletonFrameReady(Skeleton[] skeletons)
         {
+            if (!this.IsVisible) return;
             if (skeletons == null || skeletons.Length == 0) return;
             var skeleton = skeletons[0];
             var leftHand = skeleton.Joints[JointType.HandLeft];
@@ -216,33 +234,13 @@ namespace capstoneOneShot.Views
 
                 if (activeHand.TrackingState == JointTrackingState.NotTracked)
                 {
-                    HandCursor.Visibility = Visibility.Collapsed;
-                    UpdateHover(null);
+                    _pointerService.ProcessHandPosition(new Point(0, 0), false);
                     return;
                 }
 
                 // Use MapToCanvas so cursor is in the exact same coordinate space as the skeleton
-                var handPoint = MapToCanvas(activeHand.Position, MenuCanvas.ActualWidth, MenuCanvas.ActualHeight); double hx = handPoint.X;
-                double hy = handPoint.Y;
-
-                Canvas.SetLeft(HandCursor, hx - HandCursor.Width / 2);
-                Canvas.SetTop(HandCursor, hy - HandCursor.Height / 2);
-                HandCursor.Visibility = Visibility.Visible;
-
-                // Hit-test buttons
-                Grid nearest = null;
-                foreach (var btn in new[] { Btn_StartSession, Btn_ROMTest,
-                                     Btn_PoseLibrary, Btn_Settings, Btn_Exit })
-                {
-                    double bx = Canvas.GetLeft(btn) + btn.Width / 2;
-                    double by = Canvas.GetTop(btn) + btn.Height / 2;
-                    double dx = hx - bx;
-                    double dy = hy - by;
-                    double dist = Math.Sqrt(dx * dx + dy * dy);
-                    if (dist <= HoverRadius) { nearest = btn; break; }
-                }
-
-                UpdateHover(nearest);
+                var handPoint = MapToCanvas(activeHand.Position, MenuCanvas.ActualWidth, MenuCanvas.ActualHeight);
+                _pointerService.ProcessHandPosition(handPoint, true);
             });
         }
 
@@ -333,129 +331,10 @@ namespace capstoneOneShot.Views
             return new Point(x, y);
         }
 
-        // ── Hover timer ──────────────────────────────────────────────────
-        private void OnHoverTick(object sender, EventArgs e)
-        {
-            if (_hoveredButton == null)
-            {
-                if (_hoverProgress > 0)
-                {
-                    _hoverProgress = Math.Max(0, _hoverProgress - (1.0 / FrameRate) * 2);
-                    UpdateProgressArc(_hoveredButton, _hoverProgress);
-                }
-                return;
-            }
-
-            _hoverProgress += (1.0 / FrameRate) / HoldSeconds;
-            if (_hoverProgress >= 1.0)
-            {
-                _hoverProgress = 0;
-                FireButton(_hoveredButton);
-                return;
-            }
-            UpdateProgressArc(_hoveredButton, _hoverProgress);
-        }
-
-        private void UpdateHover(Grid newButton)
-        {
-            if (newButton == _hoveredButton) return;
-
-            if (_hoveredButton != null)
-            {
-                SetGlowOpacity(_hoveredButton, 0);
-                UpdateProgressArc(_hoveredButton, 0);
-                _hoverProgress = 0;
-            }
-
-            _hoveredButton = newButton;
-            if (_hoveredButton != null)
-                SetGlowOpacity(_hoveredButton, 0.15);
-        }
-
-        private void UpdateProgressArc(Grid btn, double progress)
-        {
-            if (btn == null) return;
-            foreach (var child in btn.Children)
-            {
-                if (child is Ellipse arc && arc.Name.StartsWith("Progress_"))
-                {
-                    double circ = _buttonCircumferences.ContainsKey(btn)
-                                    ? _buttonCircumferences[btn] : 471;
-                    double filled = circ * progress;
-                    arc.StrokeDashArray = new DoubleCollection { filled, circ - filled };
-                    arc.InvalidateVisual();
-                    break;
-                }
-            }
-        }
-
-        private void SetGlowOpacity(Grid btn, double opacity)
-        {
-            foreach (var child in btn.Children)
-            {
-                if (child is Ellipse e && e.Name.StartsWith("Glow_"))
-                {
-                    e.BeginAnimation(Ellipse.OpacityProperty,
-                        new DoubleAnimation(opacity, TimeSpan.FromMilliseconds(150)));
-                    break;
-                }
-            }
-        }
-
-        // ── Fire button ──────────────────────────────────────────────────
-        private void FireButton(Grid btn)
-        {
-            if (_isFiring) return;
-            _isFiring = true;
-
-            SetGlowOpacity(btn, 0);
-            UpdateProgressArc(btn, 0);
-            _hoveredButton = null;
-            _hoverProgress = 0;
-
-            switch (btn.Tag?.ToString())
-            {
-                case "StartSession":
-                    var selection = new PoseSelectionView(_kinectManager);
-                    selection.Show();
-                    Hide();
-                    break;
-
-                case "ROMTest":
-                    var rom = new ROMTestView(_kinectManager);
-                    bool? res = rom.ShowDialog();
-                    if (res == true)
-                    {
-                        var sel = new PoseSelectionView(_kinectManager);
-                        sel.Show();
-                        Hide();
-                    }
-                    break;
-
-                case "PoseLibrary":
-                    var library = new PoseSelectionView(_kinectManager);
-                    library.Show();
-                    Hide();
-                    break;
-
-                case "Settings":
-                    MessageBox.Show("Settings coming soon!", "Not Yet Implemented",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                    break;
-
-                case "Exit":
-                    _kinectManager?.Shutdown();
-                    Application.Current.Shutdown();
-                    break;
-            }
-
-            _isFiring = false;
-        }
-
         // ── Cleanup ──────────────────────────────────────────────────────
         protected override void OnClosed(EventArgs e)
         {
-            _hoverTimer?.Stop();
+            _pointerService?.Stop();
             _kinectManager?.Shutdown();
             base.OnClosed(e);
         }

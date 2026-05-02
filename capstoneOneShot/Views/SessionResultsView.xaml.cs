@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -90,8 +90,7 @@ namespace capstoneOneShot.Views
 
         private void MainMenu_Click(object sender, RoutedEventArgs e)
         {
-            var main = new MainWindow();
-            main.Show();
+            Application.Current.MainWindow.Show();
             Close();
         }
     }

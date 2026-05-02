@@ -35,8 +35,47 @@ namespace capstoneOneShot.Services
         // ---------------------------------------------------------------
         public bool Initialize()
         {
-            _sensor = KinectSensor.KinectSensors
-                          .FirstOrDefault(s => s.Status == KinectStatus.Connected);
+            // Support both Kinect SDK v1 (KinectSensor.KinectSensors) and v2 (KinectSensor.GetDefault)
+            try
+            {
+                // Attempt v1 API
+                var sensorsProp = typeof(KinectSensor).GetProperty("KinectSensors");
+                if (sensorsProp != null)
+                {
+                    var sensors = sensorsProp.GetValue(null) as System.Collections.IEnumerable;
+                    if (sensors != null)
+                    {
+                        foreach (var s in sensors)
+                        {
+                            var statusProp = s.GetType().GetProperty("Status");
+                            if (statusProp != null)
+                            {
+                                var status = statusProp.GetValue(s);
+                                if (status != null && status.ToString() == "Connected")
+                                {
+                                    _sensor = s as KinectSensor;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            if (_sensor == null)
+            {
+                try
+                {
+                    // Attempt v2 API
+                    var getDefault = typeof(KinectSensor).GetMethod("GetDefault");
+                    if (getDefault != null)
+                    {
+                        _sensor = getDefault.Invoke(null, null) as KinectSensor;
+                    }
+                }
+                catch { }
+            }
 
             if (_sensor == null) return false;
 

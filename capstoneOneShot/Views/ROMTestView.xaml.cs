@@ -1,4 +1,4 @@
-﻿using capstoneOneShot.Models;
+using capstoneOneShot.Models;
 using capstoneOneShot.Services;
 using System;
 using System.Collections.Generic;
@@ -19,6 +19,8 @@ namespace capstoneOneShot.Views
         private DispatcherTimer _countdownTimer;
         private int _secondsRemaining;
         private bool _testRunning = false;
+        private bool _waitingForDetection = false;
+        private BodyDetectionStatus _currentBodyStatus = BodyDetectionStatus.NotDetected;
 
         private const double JointRadius = 6;
 
@@ -48,11 +50,35 @@ namespace capstoneOneShot.Views
             TestNameLabel.Text = test.Name;
             InstructionLabel.Text = test.Instruction;
             ProgressLabel.Text = $"Test {_romService.CurrentTestIndex + 1} of {_romService.Tests.Count}";
-            ProgressBar.Value = _romService.CurrentTestIndex + 1;
+            // ProgressBar control isn't declared in this view's XAML; update pips instead
+            UpdateProgressPips(_romService.CurrentTestIndex + 1);
             AngleReadout.Text = "-- °";
             BestAngleReadout.Text = "-- °";
-            NextButton.Content = "Start Test";
             _testRunning = false;
+            _waitingForDetection = false;
+
+            // Show start overlay using the pause overlay
+            PauseTitleText.Text = "READY TO START";
+            PauseDescriptionText.Text = $"Up next: {test.Name}\nReview the instructions and step into position.";
+            ResumeButtonText.Text = "Start Test";
+            PauseOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void UpdateProgressPips(int activeIndex)
+        {
+            if (ProgressPips == null) return;
+            ProgressPips.Items.Clear();
+            for (int i = 1; i <= _romService.Tests.Count; i++)
+            {
+                var tb = new TextBlock
+                {
+                    Text = "●",
+                    FontSize = 8,
+                    Margin = new Thickness(4, 0, 4, 0),
+                    Foreground = i == activeIndex ? new SolidColorBrush(Color.FromRgb(77, 208, 225)) : new SolidColorBrush(Color.FromRgb(107,122,141))
+                };
+                ProgressPips.Items.Add(tb);
+            }
         }
 
         // ---------------------------------------------------------------
@@ -90,7 +116,19 @@ namespace capstoneOneShot.Views
                         BestAngleReadout.Text = "-- °";
                         break;
                 }
+                
+                _currentBodyStatus = status;
+                CheckAutoStart();
             });
+        }
+
+        private void CheckAutoStart()
+        {
+            if (_waitingForDetection && _currentBodyStatus == BodyDetectionStatus.Detected && !_testRunning)
+            {
+                _waitingForDetection = false;
+                StartCountdown();
+            }
         }
 
         private void SetTrackingStatus(string text, string hex)
@@ -222,17 +260,9 @@ namespace capstoneOneShot.Views
         // ---------------------------------------------------------------
         // Button / countdown
         // ---------------------------------------------------------------
-        private void NextButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!_testRunning) StartCountdown();
-            else AdvanceTest();
-        }
-
         private void StartCountdown()
         {
             _testRunning = true;
-            NextButton.Content = "Recording...";
-            NextButton.IsEnabled = false;
 
             var test = _romService.GetCurrentTest();
             _secondsRemaining = test.DurationSeconds;
@@ -252,10 +282,7 @@ namespace capstoneOneShot.Views
             if (_secondsRemaining <= 0)
             {
                 _countdownTimer.Stop();
-                NextButton.Content = _romService.CurrentTestIndex < _romService.Tests.Count - 1
-                                     ? "Next Test →"
-                                     : "See Results";
-                NextButton.IsEnabled = true;
+                AdvanceTest();
             }
         }
 
@@ -263,6 +290,34 @@ namespace capstoneOneShot.Views
         {
             _romService.AdvanceToNextTest();
             LoadCurrentTest();
+        }
+
+        private void ResumeButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Resume from pause overlay
+            PauseOverlay.Visibility = Visibility.Collapsed;
+
+            // Wait for full body detection to start countdown
+            if (!_testRunning)
+            {
+                _waitingForDetection = true;
+                CheckAutoStart();
+            }
+        }
+
+        private void RedoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Restart current test
+            _romService.Reset();
+            LoadCurrentTest();
+        }
+
+        private void EndSessionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Abort and close
+            Cleanup();
+            Application.Current.MainWindow.Show();
+            Close();
         }
 
         // ---------------------------------------------------------------
@@ -276,15 +331,13 @@ namespace capstoneOneShot.Views
             UserSession.ROMProfile = _romService.BuildProfile(ResultDifficulty);
 
             MessageBox.Show(
-                "ROM Test complete!\n\nYour recommended difficulty: "
-                + ResultDifficulty.ToString()
-                + "\n\nWe will filter poses based on your flexibility.",
+                "Your ROM results have been recorded.\n\nWe will filter poses based on your flexibility.",
                 "Assessment Complete",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
 
             Cleanup();
-            DialogResult = true;
+            Application.Current.MainWindow.Show();
             Close();
         }
 
