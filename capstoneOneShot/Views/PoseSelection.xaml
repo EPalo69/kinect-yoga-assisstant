@@ -4,7 +4,9 @@
         Title="Select a Pose" Height="800" Width="1200"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
-        Background="#0A0F1E">
+        Background="#0A0F1E"
+        WindowStyle="None"
+        AllowsTransparency="True">
 
     <Window.Resources>
         <Style x:Key="FilterBtn" TargetType="Button">

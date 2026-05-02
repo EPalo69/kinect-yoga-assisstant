@@ -17,7 +17,6 @@ namespace capstoneOneShot.Views
     {
         private KinectManager _kinectManager;
         //private AvatarService _avatarService;
-
         private PointerSelectionService _pointerService;
 
         private const double JointRadius = 6;
