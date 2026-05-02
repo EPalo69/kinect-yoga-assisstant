@@ -160,11 +160,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\InstructionPanelState.cs" />
     <Compile Include="Models\UserROMProfile.cs" />
     <Compile Include="Models\UserSession.cs" />
     <Compile Include="Services\AvatarService.cs" />
     <Compile Include="Services\PauseGestureService.cs" />
     <Compile Include="Services\PointerSelectionService.cs" />
+    <Compile Include="Services\TextToSpeechService.cs" />
     <Compile Include="Services\TransitionHelper.cs" />
     <Compile Include="Views\PoseDetailView.xaml.cs">
       <DependentUpon>PoseDetailView.xaml</DependentUpon>
@@ -257,8 +259,14 @@
     <PackageReference Include="HelixToolkit.Wpf" Version="3.1.2" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+    <PackageReference Include="System.Speech">
+      <Version>10.0.7</Version>
+    </PackageReference>
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Icons\pause-gesture.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\CommunityToolkit.Mvvm.8.3.2\build\CommunityToolkit.Mvvm.targets" Condition="Exists('..\packages\CommunityToolkit.Mvvm.8.3.2\build\CommunityToolkit.Mvvm.targets')" />

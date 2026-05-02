@@ -3,12 +3,15 @@ using capstoneOneShot.Services;
 using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+
 
 namespace capstoneOneShot.Views
 {
@@ -30,21 +33,30 @@ namespace capstoneOneShot.Views
 
         private List<double> _frameScores = new List<double>();
         private double _bestScore = 0;
-        private PoseDefinition _currentPose => _poses[_currentPoseIndex];
+        private PoseDefinition _currentPose => _currentPoseIndex < _poses.Count ? _poses[_currentPoseIndex] : null;
+        private PoseDefinition _lastCompletedPose;
+        private readonly TextToSpeechService _tts;
+        private bool _poseEverCorrect = false;
+        private string _activeInstruction = null;
 
+        private ObservableCollection<InstructionItem> _instructionItems;
+        private ObservableCollection<InstructionItem> _correctionItems;
 
-        public SessionView(KinectManager kinectManager, DifficultyLevel difficulty)
-        {
-            InitializeComponent();
-            _kinectManager = kinectManager;
-            _evaluator = new PoseEvaluator();
-            _poses = PoseLibrary.GetPosesByDifficulty(difficulty);
+        private static SolidColorBrush Hex(string hex) => (SolidColorBrush)new BrushConverter().ConvertFrom(hex);
 
-            SetupUI(difficulty.ToString());
-            SetupKinect();
-            LoadPose(0);
-            StartHoldTimer();
-        }
+        //public SessionView(KinectManager kinectManager, DifficultyLevel difficulty)
+        //{
+        //    InitializeComponent();
+        //    _kinectManager = kinectManager;
+        //    _evaluator = new PoseEvaluator();
+        //    _poses = PoseLibrary.GetPosesByDifficulty(difficulty);
+        //    _tts = new TextToSpeechService();
+
+        //    SetupUI(difficulty.ToString());
+        //    SetupKinect();
+        //    LoadPose(0);
+        //    StartHoldTimer();
+        //}
 
         public SessionView(KinectManager kinectManager, PoseDefinition pose)
         {
@@ -52,6 +64,7 @@ namespace capstoneOneShot.Views
             _kinectManager = kinectManager;
             _evaluator = new PoseEvaluator();
             _poses = new List<PoseDefinition> { pose };
+            _tts = new TextToSpeechService();
 
             SetupUI(pose.Difficulty.ToString());
             SetupKinect();
@@ -93,16 +106,64 @@ namespace capstoneOneShot.Views
 
             _evaluator.ResetHistory();
 
+            // Reset TTS
+            _tts.Reset();
+            _poseEverCorrect = false;
+            _activeInstruction = null;
+
             var pose = _poses[index];
             CurrentPoseLabel.Text = pose.Name;
-            PoseDescriptionLabel.Text = pose.Description;
+            //PoseDescriptionLabel.Text = pose.Description;
             ScoreLabel.Text = "0%";
             HoldTimerLabel.Text = "0s";
             FeedbackList.ItemsSource = null;
             AllGoodLabel.Visibility = Visibility.Collapsed;
             _holdSeconds = 0;
 
+            // Build instruction items from pose rules
+            BuildInstructionPanel(pose);
+
             LoadPoseImage(pose.ImageFileName);
+        }
+
+        private void BuildInstructionPanel(PoseDefinition pose)
+        {
+            _instructionItems = new ObservableCollection<InstructionItem>(
+                pose.Rules.Select(r => new InstructionItem
+                {
+                    JointName = r.JointName,
+                    Text = r.Feedback,
+                    Status = InstructionItemStatus.Pending
+                })
+            );
+
+            _correctionItems = new ObservableCollection<InstructionItem>();
+
+            InstructionsList.ItemsSource = _instructionItems;
+            CorrectionsList.ItemsSource = _correctionItems;
+
+            CorrectionsSection.Visibility = Visibility.Collapsed;
+            GuidanceDivider.Visibility = Visibility.Collapsed;
+            AllDoneBanner.Visibility = Visibility.Collapsed;
+
+            // Activate the first instruction immediately
+            if (_instructionItems.Count > 0)
+                SetActiveInstruction(_instructionItems[0].JointName);
+        }
+
+        private void SetActiveInstruction(string jointName)
+        {
+            _activeInstruction = jointName;
+
+            foreach (var item in _instructionItems)
+            {
+                if (item.JointName == jointName &&
+                    item.Status != InstructionItemStatus.Completed)
+                {
+                    item.Status = InstructionItemStatus.Active;
+
+                }
+            }
         }
 
         /// <summary>
@@ -125,7 +186,6 @@ namespace capstoneOneShot.Views
                 }
             }
 
-            // Fall through: no filename set or file not found — show placeholder
             PoseReferenceImage.Visibility = Visibility.Collapsed;
             PoseImagePlaceholder.Visibility = Visibility.Visible;
         }
@@ -153,6 +213,7 @@ namespace capstoneOneShot.Views
 
         private void AdvancePose()
         {
+            _lastCompletedPose = _currentPose;
             _currentPoseIndex++;
             _holdSeconds = 0;
             LoadPose(_currentPoseIndex);
@@ -194,14 +255,10 @@ namespace capstoneOneShot.Views
             });
         }
 
-        private void SetTrackingStatus(string text, string hex)
-        {
-            // UI elements removed
-        }
-
         private void OnSkeletonFrameReady(Skeleton[] skeletons)
         {
             if (skeletons == null || skeletons.Length == 0) return;
+            if (_currentPose == null) return;
 
             var skeleton = skeletons[0];
             var angles = BuildAngleDictionary(skeleton);
@@ -215,7 +272,152 @@ namespace capstoneOneShot.Views
             {
                 UpdateScoreDisplay(result);
                 DrawSkeleton(skeleton);
+                UpdateTTS(result);
             });
+        }
+
+        private void UpdateTTS(EvaluationResult result)
+        {
+            if (_isPaused) return;
+            if (_currentPose == null) return;
+
+            var currentFeedback = result.Feedback ?? new List<string>();
+
+            // Build a fast-lookup set of currently failing joint feedback strings
+            var failingFeedback = new HashSet<string>(currentFeedback);
+
+            if (!_poseEverCorrect)
+            {
+                // ════════════════════════════════════════════════════
+                // PHASE 1 — Step-by-step guidance into the pose
+                // ════════════════════════════════════════════════════
+
+                // Update instruction item statuses
+                foreach (var item in _instructionItems)
+                {
+                    bool isFailing = failingFeedback.Contains(item.Text);
+
+                    if (!isFailing && item.Status != InstructionItemStatus.Completed)
+                    {
+                        // Joint is now passing — mark complete
+                        item.Status = InstructionItemStatus.Completed;
+                    }
+                    else if (isFailing && item.Status == InstructionItemStatus.Completed)
+                    {
+                        // Regression: was completed but failing again
+                        // In Phase 1 — revert to active so user re-fixes it
+                        item.Status = InstructionItemStatus.Active;
+                    }
+                }
+
+                // ── Determine what to coach next ──────────────────
+
+                // PRIORITY: If our committed instruction regressed, re-lock onto it
+                var committedItem = _instructionItems
+                    .FirstOrDefault(i => i.JointName == _activeInstruction);
+
+                bool committedStillFailing = committedItem != null
+                                          && failingFeedback.Contains(committedItem.Text);
+
+                if (committedStillFailing)
+                {
+                    // Stay on current instruction — correction takes priority
+                    _tts.Speak(string.Empty, committedItem.Text);
+                }
+                else
+                {
+                    // Current instruction resolved — find next failing item
+                    var nextItem = _instructionItems
+                        .FirstOrDefault(i => failingFeedback.Contains(i.Text));
+
+                    if (nextItem != null)
+                    {
+                        if (nextItem.JointName != _activeInstruction)
+                        {
+                            SetActiveInstruction(nextItem.JointName);
+                            _tts.Reset();
+                        }
+                        _tts.Speak(nextItem.Text, string.Empty);
+                    }
+                    else
+                    {
+                        // ★ All joints passing — enter Phase 2
+                        _poseEverCorrect = true;
+                        _activeInstruction = null;
+
+                        foreach (var item in _instructionItems)
+                        {
+                            item.Status = InstructionItemStatus.Completed;
+                        }
+
+                        CorrectionsSection.Visibility = Visibility.Collapsed;
+                        GuidanceDivider.Visibility = Visibility.Collapsed;
+                        AllDoneBanner.Visibility = Visibility.Visible;
+
+                        _tts.Reset();
+                        _tts.Speak("Great! Now hold the pose.", string.Empty);
+                    }
+                }
+            }
+            else
+            {
+                // ════════════════════════════════════════════════════
+                // PHASE 2 — Correction mode
+                // All instructions stay green; deviations appear in
+                // the separate Corrections list above them.
+                // ════════════════════════════════════════════════════
+
+                _correctionItems.Clear();
+
+                if (currentFeedback.Count == 0)
+                {
+                    // Perfect form — hide corrections panel
+                    CorrectionsSection.Visibility = Visibility.Collapsed;
+                    GuidanceDivider.Visibility = Visibility.Collapsed;
+                    AllDoneBanner.Visibility = Visibility.Visible;
+
+                    // Also ensure instruction items stay green
+                    foreach (var item in _instructionItems)
+                    {
+                        item.Status = InstructionItemStatus.Completed;
+                    }
+
+                    _tts.Speak("Good, keep holding.", string.Empty);
+                    return;
+                }
+
+                // Populate corrections list
+                foreach (var feedback in currentFeedback)
+                {
+                    _correctionItems.Add(new InstructionItem
+                    {
+                        Text = feedback,
+                        Status = InstructionItemStatus.Regressed
+                    });
+
+                    // Mirror regression on the instruction item too
+                    var matching = _instructionItems
+                        .FirstOrDefault(i => i.Text == feedback);
+                    if (matching != null)
+                    {
+                        matching.Status = InstructionItemStatus.Regressed;
+                    }
+                }
+
+                // Restore green for joints that are still passing
+                foreach (var item in _instructionItems
+                             .Where(i => !failingFeedback.Contains(i.Text)))
+                {
+                    item.Status = InstructionItemStatus.Completed;
+                }
+
+                CorrectionsSection.Visibility = Visibility.Visible;
+                GuidanceDivider.Visibility = Visibility.Visible;
+                AllDoneBanner.Visibility = Visibility.Collapsed;
+
+                // TTS: correction = first deviation, highest priority
+                _tts.Speak(string.Empty, currentFeedback[0]);
+            }
         }
 
         private void UpdateScoreDisplay(EvaluationResult result)
@@ -392,6 +594,10 @@ namespace capstoneOneShot.Views
             UnhookKinect();
             Close();
         }
+        private void PauseButton_Click(object sender, MouseButtonEventArgs e)
+        {
+            OnPauseTriggered(this, EventArgs.Empty);
+        }
 
         private void EndSessionButton_Click(object sender, RoutedEventArgs e)
         {
@@ -410,11 +616,9 @@ namespace capstoneOneShot.Views
 
         private void OpenResultsScreen()
         {
-            double avg = _frameScores.Count > 0
-                          ? _frameScores.Average()
-                          : 0;
+            double avg = _frameScores.Count > 0 ? _frameScores.Average() : 0;
 
-            var results = new SessionResultsView(_kinectManager, _currentPose);
+            var results = new SessionResultsView(_kinectManager, _lastCompletedPose ?? _poses[0]);
             results.SetResults(avg, _bestScore, _holdSeconds);
             results.Show();
         }
@@ -425,5 +629,115 @@ namespace capstoneOneShot.Views
             UnhookKinect();
             base.OnClosed(e);
         }
+
+
+
+        // ── DEV TEST METHODS (remove before release) ──────────────────────────
+
+        // Simulates session start — all joints failing, Phase 1 begins
+        private void TestPhase1_Click(object sender, RoutedEventArgs e)
+        {
+            _poseEverCorrect = false;
+            _activeInstruction = null;
+            _tts.Reset();
+
+            // Rebuild panel as if session just loaded
+            BuildInstructionPanel(_currentPose);
+
+            // Simulate first skeleton frame: all joints failing
+            var fakeResult = new EvaluationResult
+            {
+                Score = 20,
+                Feedback = _currentPose.Rules.Select(r => r.Feedback).ToList()
+            };
+
+            UpdateTTS(fakeResult);
+        }
+
+        // Simulates fixing one joint at a time — click repeatedly to walk through
+        private int _testJointIndex = 0;
+        private List<string> _testRemainingFeedback = null;
+
+        private void TestProgress_Click(object sender, RoutedEventArgs e)
+        {
+            // Initialize remaining feedback list on first click
+            if (_testRemainingFeedback == null || _testRemainingFeedback.Count == 0)
+                _testRemainingFeedback = _currentPose.Rules.Select(r => r.Feedback).ToList();
+
+            // Remove the first item (simulate user fixing that joint)
+            if (_testRemainingFeedback.Count > 0)
+                _testRemainingFeedback.RemoveAt(0);
+
+            var fakeResult = new EvaluationResult
+            {
+                Score = 100 - (_testRemainingFeedback.Count * 10),
+                Feedback = new List<string>(_testRemainingFeedback)
+            };
+
+            UpdateTTS(fakeResult);
+
+            // If all fixed, reset for next test cycle
+            if (_testRemainingFeedback.Count == 0)
+                _testRemainingFeedback = null;
+        }
+
+        // Simulates reaching Phase 2 — all joints correct
+        private void TestPhase2_Click(object sender, RoutedEventArgs e)
+        {
+            var fakeResult = new EvaluationResult
+            {
+                Score = 100,
+                Feedback = new List<string>()
+            };
+
+            UpdateTTS(fakeResult);
+        }
+
+        // Simulates a correction in Phase 2 — one joint deviates
+        private void TestCorrection_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_poseEverCorrect)
+            {
+                MessageBox.Show("Run '★ Sim Phase 2' first to enter Phase 2.", "Test");
+                return;
+            }
+
+            var fakeResult = new EvaluationResult
+            {
+                Score = 75,
+                Feedback = new List<string>
+        {
+            _currentPose.Rules[0].Feedback  // first joint deviates
+        }
+            };
+
+            UpdateTTS(fakeResult);
+        }
+
+        // Simulates regression — user fixed joint A, then drops it while working on B
+        private void TestRegress_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_poseEverCorrect)
+            {
+                MessageBox.Show("Run '★ Sim Phase 2' first to enter Phase 2.", "Test");
+                return;
+            }
+
+            // Two joints regressed at once
+            var fakeResult = new EvaluationResult
+            {
+                Score = 50,
+                Feedback = new List<string>
+        {
+            _currentPose.Rules[0].Feedback,
+            _currentPose.Rules[1].Feedback
+        }
+            };
+
+            UpdateTTS(fakeResult);
+        }
+
+
+
     }
 }
