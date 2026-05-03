@@ -540,6 +540,7 @@ namespace capstoneOneShot.Views
             {
                 _isPaused = true;
                 _holdTimer?.Stop();
+                _tts.Reset();
                 PauseOverlay.Visibility = Visibility.Visible;
             }
         }
@@ -581,6 +582,7 @@ namespace capstoneOneShot.Views
         private void EndSession()
         {
             _holdTimer?.Stop();
+            _tts.Reset();
             UnhookKinect();
             OpenResultsScreen();
             Close();
