@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Microsoft.Kinect;
+using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using Microsoft.Kinect;
 
 namespace capstoneOneShot.Services
 {
@@ -60,6 +61,8 @@ namespace capstoneOneShot.Services
 
         /// <summary>Progress from 0.0 to 1.0 while arms are crossed. Resets to 0 when arms drop.</summary>
         public event EventHandler<float> HoldProgressChanged;
+
+        public event EventHandler OverlayClicked;
 
         // ─────────────────────────────────────────────────────────────────────
         public PauseGestureService(KinectManager kinectManager)
@@ -132,7 +135,7 @@ namespace capstoneOneShot.Services
                 return;
             }
 
-            bool crossed = IsCrossedArms(skeleton);
+            bool crossed = IsBothHandsAboveHead(skeleton);
 
             if (crossed)
             {
@@ -167,46 +170,36 @@ namespace capstoneOneShot.Services
             }
         }
 
-        // ── Crossed-arms detection ────────────────────────────────────────────
-
-        private bool IsCrossedArms(Skeleton skeleton)
+        private bool IsBothHandsAboveHead(Skeleton skeleton)
         {
             var joints = skeleton.Joints;
 
-            // Require all key joints to be at least inferred
+            // Require all key joints to be tracked
             JointType[] required =
             {
                 JointType.WristRight, JointType.WristLeft,
-                JointType.ElbowRight, JointType.ElbowLeft,
-                JointType.ShoulderCenter
+                JointType.Head
             };
 
             if (required.Any(j => joints[j].TrackingState == JointTrackingState.NotTracked))
                 return false;
 
-            // Use the shoulder centre as an approximate midline for Kinect v1 skeletons
-            float midX = joints[JointType.ShoulderCenter].Position.X;
-
-            float rightWristX = joints[JointType.WristRight].Position.X;
-            float leftWristX = joints[JointType.WristLeft].Position.X;
-
-            float rightWristY = joints[JointType.WristRight].Position.Y;
+            float headY = joints[JointType.Head].Position.Y;
             float leftWristY = joints[JointType.WristLeft].Position.Y;
-            float rightElbowY = joints[JointType.ElbowRight].Position.Y;
-            float leftElbowY = joints[JointType.ElbowLeft].Position.Y;
+            float rightWristY = joints[JointType.WristRight].Position.Y;
 
-            // Each wrist must have crossed the midline by MinWristCrossX meters
-            bool rightCrossed = (midX - rightWristX) >= MinWristCrossX;
-            bool leftCrossed = (leftWristX - midX) >= MinWristCrossX;
+            // Both wrists must be above the head joint by at least 0.05m
+            bool leftAboveHead = leftWristY > headY + 0.05f;
+            bool rightAboveHead = rightWristY > headY + 0.05f;
 
-            // Wrists must be raised above their own elbows (avoids resting arms at sides)
-            bool wristsRaised = (rightWristY - rightElbowY) >= MinElbowFlexY
-                             && (leftWristY - leftElbowY) >= MinElbowFlexY;
-
-            return rightCrossed && leftCrossed && wristsRaised;
+            return leftAboveHead && rightAboveHead;
         }
 
         // ── Fire pause ────────────────────────────────────────────────────────
+        public void SimulateClick()
+        {
+            FirePause();
+        }
 
         private void FirePause()
         {
@@ -230,106 +223,166 @@ namespace capstoneOneShot.Services
 
         private void BuildOverlay()
         {
-            // Root container — centred at bottom-centre of the canvas
             _overlayRoot = new Grid
             {
-                Width = RingSize + 60,
-                Height = RingSize + 50,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                Opacity = 0,
-                IsHitTestVisible = false
-            };
-
-            // Outer glow ring (animates on completion)
-            _glowRing = new Ellipse
-            {
-                Width = RingSize + 20,
-                Height = RingSize + 20,
-                Fill = Brushes.Transparent,
-                Stroke = new SolidColorBrush(Color.FromArgb(60, 77, 208, 225)),
-                StrokeThickness = 14,
-                HorizontalAlignment = HorizontalAlignment.Center,
+                Width = 165, // 110 * 1.5
+                Height = 165,
+                HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, -10, 0, 0),
-                Opacity = 0
+                Opacity = 0.75,
+                IsHitTestVisible = true
             };
 
-            // Background disc
+            var bg = new Border
+            {
+                Width = 165,
+                Height = 165,
+                Background = new SolidColorBrush(Color.FromArgb(0xD9, 0x08, 0x0C, 0x14)),
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0x33, 0x4D, 0xD0, 0xE1)),
+                BorderThickness = new Thickness(1.5), // 1 * 1.5
+                CornerRadius = new CornerRadius(24), // 16 * 1.5
+                Padding = new Thickness(12) // 8 * 1.5
+            };
+
+            bg.Cursor = Cursors.Hand;
+            bg.MouseLeftButtonUp += (s, e) => FirePause();
+
+            bg.MouseEnter += (s, e) =>
+            {
+                _overlayRoot.BeginAnimation(UIElement.OpacityProperty,
+                    new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(150)));
+            };
+            bg.MouseLeave += (s, e) =>
+            {
+                _overlayRoot.BeginAnimation(UIElement.OpacityProperty,
+                    new DoubleAnimation(0.75, TimeSpan.FromMilliseconds(150)));
+            };
+
+            _overlayRoot.IsHitTestVisible = true;
+
+            var innerGrid = new Grid();
+            innerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            innerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+            var image = new Image
+            {
+                Source = new System.Windows.Media.Imaging.BitmapImage(
+                    new Uri("pack://application:,,,/Assets/Icons/pause-gesture.png")),
+                Width = 60, // 40 * 1.5
+                Height = 60,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            Grid.SetRow(image, 0);
+
+            var textStack = new StackPanel
+            {
+                Margin = new Thickness(0, 9, 0, 0), // 6 * 1.5
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            _iconText = new TextBlock
+            {
+                Text = "⏸",
+                FontSize = 21, // 14 * 1.5
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x4D, 0xD0, 0xE1)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 3) // 2 * 1.5
+            };
+
+            var gestureLabel = new TextBlock
+            {
+                Text = "RAISE HANDS",
+                FontSize = 13.5, // 9 * 1.5
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x4D, 0xD0, 0xE1)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 1.5) // 1 * 1.5
+            };
+
+            _labelText = new TextBlock
+            {
+                Text = "to pause",
+                FontSize = 15, // 10 * 1.5
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xE8, 0xED, 0xF2)),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
             _bgCircle = new Ellipse
             {
-                Width = RingSize,
-                Height = RingSize,
-                Fill = new SolidColorBrush(Color.FromArgb(180, 15, 20, 30)),
-                Stroke = new SolidColorBrush(Color.FromArgb(80, 77, 208, 225)),
-                StrokeThickness = 1.5,
+                Width = 156, // 104 * 1.5
+                Height = 156,
+                Fill = Brushes.Transparent,
+                Stroke = new SolidColorBrush(Color.FromArgb(40, 77, 208, 225)),
+                StrokeThickness = 4.5, // 3 * 1.5
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Top
+                VerticalAlignment = VerticalAlignment.Center
             };
 
-            // Progress arc — uses StrokeDashArray trick (same as PointerSelectionService)
-            double arcDiameter = RingSize - RingThickness;
+            double arcDiameter = 156 - (RingThickness * 1.5);
             _progressArc = new Ellipse
             {
                 Width = arcDiameter,
                 Height = arcDiameter,
                 Fill = Brushes.Transparent,
                 Stroke = new SolidColorBrush(Color.FromRgb(77, 208, 225)),
-                StrokeThickness = RingThickness,
-                StrokeDashArray = new DoubleCollection { 0, RingCircumference },
-                // Rotate so arc starts from the top (12 o'clock)
+                StrokeThickness = RingThickness * 1.5,
+                StrokeDashArray = new DoubleCollection { 0, RingCircumference * 1.5 },
                 RenderTransformOrigin = new Point(0.5, 0.5),
                 RenderTransform = new RotateTransform(-90),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, RingThickness / 2, 0, 0)
+                VerticalAlignment = VerticalAlignment.Center
             };
 
-            // Crossed-arms icon
-            _iconText = new TextBlock
+            _glowRing = new Ellipse
             {
-                Text = "🤞",   // swap for a custom glyph/icon if preferred
-                FontSize = 28,
+                Width = 171, // 114 * 1.5
+                Height = 171,
+                Fill = Brushes.Transparent,
+                Stroke = new SolidColorBrush(Color.FromArgb(60, 77, 208, 225)),
+                StrokeThickness = 12, // 8 * 1.5
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, RingSize * 0.22, 0, 0),
-                Foreground = new SolidColorBrush(Color.FromArgb(200, 200, 220, 230))
+                VerticalAlignment = VerticalAlignment.Center,
+                Opacity = 0
             };
 
-            // Label text
-            _labelText = new TextBlock
-            {
-                Text = "Hold to pause",
-                FontSize = 11,
-                FontWeight = FontWeights.Medium,
-                Foreground = new SolidColorBrush(Color.FromArgb(180, 160, 210, 220)),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 0, 0, 4)
-            };
+            textStack.Children.Add(_iconText);
+            textStack.Children.Add(gestureLabel);
+            textStack.Children.Add(_labelText);
+            Grid.SetRow(textStack, 1);
+
+            innerGrid.Children.Add(image);
+            innerGrid.Children.Add(textStack);
+            bg.Child = innerGrid;
 
             _overlayRoot.Children.Add(_glowRing);
             _overlayRoot.Children.Add(_bgCircle);
             _overlayRoot.Children.Add(_progressArc);
-            _overlayRoot.Children.Add(_iconText);
-            _overlayRoot.Children.Add(_labelText);
+            _overlayRoot.Children.Add(bg);
 
-            // Position at bottom-centre of parent canvas
-            // We'll update this whenever the canvas size changes
             PositionOverlay();
             _overlayCanvas.SizeChanged += (s, e) => PositionOverlay();
             _overlayCanvas.Children.Add(_overlayRoot);
+            Panel.SetZIndex(_overlayRoot, 9999);
+
+            _overlayRoot.Opacity = 0.75;
+            _overlayVisible = true;
         }
 
         private void PositionOverlay()
         {
             if (_overlayCanvas == null || _overlayRoot == null) return;
 
-            double cx = _overlayCanvas.ActualWidth / 2 - (_overlayRoot.Width / 2);
-            double cy = _overlayCanvas.ActualHeight - _overlayRoot.Height - 40;
+            // Top-right with a small margin
+            Canvas.SetRight(_overlayRoot, 16);
+            Canvas.SetTop(_overlayRoot, 16);
 
-            Canvas.SetLeft(_overlayRoot, cx);
-            Canvas.SetTop(_overlayRoot, Math.Max(0, cy));
+            // Canvas.SetRight doesn't work directly — calculate from width
+            double left = _overlayCanvas.ActualWidth - _overlayRoot.Width - 16;
+            Canvas.SetLeft(_overlayRoot, Math.Max(0, left));
+            Canvas.SetTop(_overlayRoot, 16);
         }
 
         private void RemoveOverlay()
@@ -351,15 +404,12 @@ namespace capstoneOneShot.Services
 
         private void SetOverlayVisible(bool visible)
         {
-            if (_overlayRoot == null || visible == _overlayVisible) return;
-            _overlayVisible = visible;
-
-            double targetOpacity = visible ? 1.0 : 0.0;
-            _overlayRoot.BeginAnimation(UIElement.OpacityProperty,
-                new DoubleAnimation(targetOpacity, TimeSpan.FromMilliseconds(visible ? 200 : 400)));
+            if (_overlayRoot == null) return;
 
             if (visible)
-                _labelText.Text = "Hold to pause";
+                _labelText.Text = "to pause";
+            else
+                _labelText.Text = "to pause";
         }
 
         private void UpdateOverlayProgress(float progress)

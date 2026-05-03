@@ -27,6 +27,7 @@ namespace capstoneOneShot.Views
         
         private PauseGestureService _pauseService;
         private bool _isPaused = false;
+        private PointerSelectionService _pointerService;
         private BodyDetectionStatus _currentBodyStatus = BodyDetectionStatus.NotDetected;
 
         private const double JointRadius = 6;
@@ -89,6 +90,7 @@ namespace capstoneOneShot.Views
             _pauseService = new PauseGestureService(_kinectManager);
             _pauseService.PauseDetected += OnPauseTriggered;
             _pauseService.Enable(PauseGestureCanvas);
+            Panel.SetZIndex(PauseGestureCanvas, 9999);
         }
         private void UnhookKinect()
         {
@@ -101,6 +103,10 @@ namespace capstoneOneShot.Views
                 _pauseService.Disable();
                 _pauseService.PauseDetected -= OnPauseTriggered;
             }
+
+            _pointerService?.Stop();
+            _pointerService?.ClearButtons();
+            _pointerService = null;
         }
 
         private void LoadPose(int index)
@@ -118,7 +124,7 @@ namespace capstoneOneShot.Views
             CurrentPoseLabel.Text = pose.Name;
             //PoseDescriptionLabel.Text = pose.Description;
             _currentInstructionStep = 0;
-            ScoreLabel.Text = "0%";
+            //ScoreLabel.Text = "0%";
             HoldTimerLabel.Text = "0s";
             FeedbackList.ItemsSource = null;
             AllGoodLabel.Visibility = Visibility.Collapsed;
@@ -250,7 +256,7 @@ namespace capstoneOneShot.Views
                     case BodyDetectionStatus.NotDetected:
                         NoBodyOverlay.Visibility = Visibility.Visible;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
-                        ScoreLabel.Text = "0%";
+                        //ScoreLabel.Text = "0%";
                         FeedbackList.ItemsSource = null;
                         AllGoodLabel.Visibility = Visibility.Collapsed;
                         break;
@@ -394,10 +400,10 @@ namespace capstoneOneShot.Views
 
         private void UpdateScoreDisplay(EvaluationResult result)
         {
-            ScoreLabel.Text = result.ToString() + "%";
-            ScoreLabel.Foreground = result.IsPoseCorrect
-                ? new SolidColorBrush(Color.FromRgb(76, 175, 80))
-                : new SolidColorBrush(Color.FromRgb(255, 107, 107));
+            //ScoreLabel.Text = result.ToString() + "%";
+            //ScoreLabel.Foreground = result.IsPoseCorrect
+            //    ? new SolidColorBrush(Color.FromRgb(76, 175, 80))
+            //    : new SolidColorBrush(Color.FromRgb(255, 107, 107));
 
             if (result.Feedback.Count == 0)
             {
@@ -542,7 +548,61 @@ namespace capstoneOneShot.Views
                 _holdTimer?.Stop();
                 _tts.Reset();
                 PauseOverlay.Visibility = Visibility.Visible;
+                PauseOverlay.UpdateLayout();
+
+                // ★ Initialize pointer service on the pause cursor canvas
+                _pointerService = new PointerSelectionService(PauseOverlayCursorCanvas);
+
+                // ★ Register the three pause buttons — circumference = π * diameter = π * 150 ≈ 471
+                const double circ = 471;
+                _pointerService.RegisterButton(ResumeButton, circ, () => Dispatcher.Invoke(ResumeSession));
+                _pointerService.RegisterButton(SelectionButton, circ, () => Dispatcher.Invoke(() => SelectionButton_Click(null, null)));
+                _pointerService.RegisterButton(EndSessionButton, circ, () => Dispatcher.Invoke(() => EndSessionButton_Click(null, null)));
+
+                _pointerService.BringCursorToFront();
+                _pointerService.Start();
+                _pointerService.ResetPosition();
+
+                double cx = PauseOverlayCursorCanvas.ActualWidth / 2;
+                double cy = PauseOverlayCursorCanvas.ActualHeight / 2;
+                _pointerService.ProcessHandPosition(new Point(cx, cy), true);
+
+                // ★ Feed hand position to pointer service via skeleton frames
+                _kinectManager.SkeletonFrameReady += OnPauseSkeletonFrame;
             }
+        }
+
+        private void OnPauseSkeletonFrame(Skeleton[] skeletons)
+        {
+            if (_pointerService == null) return;
+            if (skeletons == null || skeletons.Length == 0) return;
+
+            var skeleton = skeletons.FirstOrDefault(s =>
+                s.TrackingState == SkeletonTrackingState.Tracked);
+
+            if (skeleton == null)
+            {
+                Dispatcher.Invoke(() => _pointerService.ProcessHandPosition(new Point(), false));
+                return;
+            }
+
+            // Use right hand — swap to WristRight if HandRight is unreliable
+            var hand = skeleton.Joints[JointType.HandRight];
+            bool tracked = hand.TrackingState == JointTrackingState.Tracked;
+
+            Dispatcher.Invoke(() =>
+            {
+                if (!tracked) { _pointerService.ProcessHandPosition(new Point(), false); return; }
+
+                // ★ Get position in camera canvas space
+                Point cameraPoint = MapToCanvas(hand.Position);
+
+                // ★ Remap from SkeletonCanvas space to PauseOverlayCursorCanvas space
+                Point overlayPoint = SkeletonCanvas.TransformToVisual(PauseOverlayCursorCanvas)
+                                                   .Transform(cameraPoint);
+
+                _pointerService.ProcessHandPosition(overlayPoint, true);
+            });
         }
 
         private void ResumeButton_Click(object sender, RoutedEventArgs e)
@@ -554,10 +614,14 @@ namespace capstoneOneShot.Views
         {
             _isPaused = false;
             PauseOverlay.Visibility = Visibility.Collapsed;
+
+            _kinectManager.SkeletonFrameReady -= OnPauseSkeletonFrame;
+            _pointerService?.Stop();
+            _pointerService?.ClearButtons();
+            _pointerService = null;
+
             if (_currentBodyStatus == BodyDetectionStatus.Detected)
-            {
                 _holdTimer?.Start();
-            }
         }
 
         private void SelectionButton_Click(object sender, RoutedEventArgs e)

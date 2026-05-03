@@ -185,6 +185,15 @@ namespace capstoneOneShot.Services
             }
         }
 
+        public void ResetPosition()
+        {
+            _hasFirstPosition = false;
+            _smoothedPosition = new Point(0, 0);
+            _candidateButton = null;
+            _candidateFrames = 0;
+            _graceCountdown = 0;
+        }
+
         private void OnHoverTick(object sender, EventArgs e)
         {
             if (_hoveredButton == null)
