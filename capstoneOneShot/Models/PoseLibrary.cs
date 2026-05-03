@@ -64,17 +64,28 @@ namespace capstoneOneShot.Models
         {
             return new List<PoseDefinition>
             {
-                // --- Mountain Pose (Tadasana) ---
                 new PoseDefinition
                 {
-                    Name        = "Mountain Pose",
-                    Description = "Stand tall with feet together, arms at your sides, and spine straight.",
-                    Difficulty  = DifficultyLevel.Beginner,
-                    HoldSeconds = 20,
+                    Name          = "Mountain Pose",
+                    Description   = "Stand tall with feet together, arms at your sides, and spine straight.",
+                    Difficulty    = DifficultyLevel.Beginner,
+                    HoldSeconds   = 120,
                     ImageFileName = "mountain-pose.png",
+
+                    // ── Phase 1: spoken step-by-step instructions ──────────────
+                    Instructions = new List<string>
+                    {
+                        "Stand upright with feet together or hip-width apart, weight evenly distributed.",
+                        "Engage your thighs and lift your kneecaps slightly, keeping knees soft.",
+                        "Keep your pelvis neutral and gently engage your core.",
+                        "Lengthen your spine, lifting through the crown of your head with chin level.",
+                        "Roll shoulders back and down; arms relaxed at sides, palms facing forward.",
+                        "Maintain balance and breathe slowly, holding the position."
+                    },
+
+                    // ── Phase 2: joint rules — failures become corrections ──────
                     Rules = new List<JointAngleRule>
                     {
-                        // A — Left Elbow: arm extended at side ~175°, ±10°
                         new JointAngleRule
                         {
                             JointName = "LeftElbow",
@@ -82,8 +93,6 @@ namespace capstoneOneShot.Models
                             MaxAngle  = 180.0,
                             Feedback  = "Straighten your left arm fully at your side."
                         },
-
-                        // B — Right Elbow: ~175°, ±10°
                         new JointAngleRule
                         {
                             JointName = "RightElbow",
@@ -91,44 +100,34 @@ namespace capstoneOneShot.Models
                             MaxAngle  = 180.0,
                             Feedback  = "Straighten your right arm fully at your side."
                         },
-
-                        // C — Left Shoulder: arm at side ~167.5°, ±10°
                         new JointAngleRule
                         {
                             JointName = "LeftShoulder",
                             MinAngle  = 155.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Relax your left shoulder — keep your arm close to your side."
+                            Feedback  = "Relax your left shoulder and keep your arm close to your side."
                         },
-
-                        // D — Right Shoulder: ~167.5°, ±10°
                         new JointAngleRule
                         {
                             JointName = "RightShoulder",
                             MinAngle  = 155.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Relax your right shoulder — keep your arm close to your side."
+                            Feedback  = "Relax your right shoulder and keep your arm close to your side."
                         },
-
-                        // E — Left Knee: fully extended ~177°, ±7°
                         new JointAngleRule
                         {
                             JointName = "LeftKnee",
                             MinAngle  = 170.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Straighten your left knee — do not lock or bend it."
+                            Feedback  = "Straighten your left knee without locking it."
                         },
-
-                        // F — Right Knee: ~177°, ±7°
                         new JointAngleRule
                         {
                             JointName = "RightKnee",
                             MinAngle  = 170.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Straighten your right knee — do not lock or bend it."
+                            Feedback  = "Straighten your right knee without locking it."
                         },
-
-                        // G — Left Hip: neutral upright ~175°, ±7°
                         new JointAngleRule
                         {
                             JointName = "LeftHip",
@@ -136,8 +135,6 @@ namespace capstoneOneShot.Models
                             MaxAngle  = 180.0,
                             Feedback  = "Keep your hips neutral — do not tilt forward or back."
                         },
-
-                        // H — Right Hip: ~175°, ±7°
                         new JointAngleRule
                         {
                             JointName = "RightHip",
@@ -145,8 +142,6 @@ namespace capstoneOneShot.Models
                             MaxAngle  = 180.0,
                             Feedback  = "Keep your hips neutral — do not tilt forward or back."
                         },
-
-                        // I — Left Wrist: neutral/straight ~175°, ±10°
                         new JointAngleRule
                         {
                             JointName = "LeftWrist",
@@ -154,8 +149,6 @@ namespace capstoneOneShot.Models
                             MaxAngle  = 180.0,
                             Feedback  = "Keep your left wrist straight and relaxed."
                         },
-
-                        // J — Right Wrist: ~175°, ±10°
                         new JointAngleRule
                         {
                             JointName = "RightWrist",
@@ -164,9 +157,10 @@ namespace capstoneOneShot.Models
                             Feedback  = "Keep your right wrist straight and relaxed."
                         }
                     }
-                },
+                }
             };
         }
+        
 
         // ---------------------------------------------------------------
         // INTERMEDIATE POSES

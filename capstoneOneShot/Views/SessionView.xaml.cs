@@ -36,6 +36,9 @@ namespace capstoneOneShot.Views
         private PoseDefinition _currentPose => _currentPoseIndex < _poses.Count ? _poses[_currentPoseIndex] : null;
         private PoseDefinition _lastCompletedPose;
         private readonly TextToSpeechService _tts;
+        private int _currentInstructionStep = 0;
+        private bool _instructionStepSpeaking = false;
+
         private bool _poseEverCorrect = false;
         private string _activeInstruction = null;
 
@@ -114,6 +117,7 @@ namespace capstoneOneShot.Views
             var pose = _poses[index];
             CurrentPoseLabel.Text = pose.Name;
             //PoseDescriptionLabel.Text = pose.Description;
+            _currentInstructionStep = 0;
             ScoreLabel.Text = "0%";
             HoldTimerLabel.Text = "0s";
             FeedbackList.ItemsSource = null;
@@ -129,10 +133,10 @@ namespace capstoneOneShot.Views
         private void BuildInstructionPanel(PoseDefinition pose)
         {
             _instructionItems = new ObservableCollection<InstructionItem>(
-                pose.Rules.Select(r => new InstructionItem
+                pose.Instructions.Select((text, index) => new InstructionItem
                 {
-                    JointName = r.JointName,
-                    Text = r.Feedback,
+                    JointName = $"step_{index}",
+                    Text = text,
                     Status = InstructionItemStatus.Pending
                 })
             );
@@ -146,7 +150,6 @@ namespace capstoneOneShot.Views
             GuidanceDivider.Visibility = Visibility.Collapsed;
             AllDoneBanner.Visibility = Visibility.Collapsed;
 
-            // Activate the first instruction immediately
             if (_instructionItems.Count > 0)
                 SetActiveInstruction(_instructionItems[0].JointName);
         }
@@ -282,111 +285,89 @@ namespace capstoneOneShot.Views
             if (_currentPose == null) return;
 
             var currentFeedback = result.Feedback ?? new List<string>();
-
-            // Build a fast-lookup set of currently failing joint feedback strings
             var failingFeedback = new HashSet<string>(currentFeedback);
 
             if (!_poseEverCorrect)
             {
                 // ════════════════════════════════════════════════════
-                // PHASE 1 — Step-by-step guidance into the pose
+                // PHASE 1 — Walk through Instructions sequentially
+                // Each step advances only after TTS finishes speaking it.
+                // Corrections from Rules override if a joint fails.
                 // ════════════════════════════════════════════════════
 
-                // Update instruction item statuses
-                foreach (var item in _instructionItems)
+                // ★ Correction override: if any joint is failing, speak
+                //   the correction and pause instruction progression
+                if (currentFeedback.Count > 0)
                 {
-                    bool isFailing = failingFeedback.Contains(item.Text);
+                    // Mirror failing joints as corrections in the UI
+                    foreach (var item in _instructionItems)
+                        item.Status = item.Status == InstructionItemStatus.Completed
+                            ? InstructionItemStatus.Completed
+                            : item.Status; // keep current
 
-                    if (!isFailing && item.Status != InstructionItemStatus.Completed)
-                    {
-                        // Joint is now passing — mark complete
-                        item.Status = InstructionItemStatus.Completed;
-                    }
-                    else if (isFailing && item.Status == InstructionItemStatus.Completed)
-                    {
-                        // Regression: was completed but failing again
-                        // In Phase 1 — revert to active so user re-fixes it
-                        item.Status = InstructionItemStatus.Active;
-                    }
+                    _tts.Speak(string.Empty, currentFeedback[0]);
+                    return;
                 }
 
-                // ── Determine what to coach next ──────────────────
-
-                // PRIORITY: If our committed instruction regressed, re-lock onto it
-                var committedItem = _instructionItems
-                    .FirstOrDefault(i => i.JointName == _activeInstruction);
-
-                bool committedStillFailing = committedItem != null
-                                          && failingFeedback.Contains(committedItem.Text);
-
-                if (committedStillFailing)
+                // ★ No joint failures — advance through instruction steps
+                if (_currentInstructionStep < _instructionItems.Count)
                 {
-                    // Stay on current instruction — correction takes priority
-                    _tts.Speak(string.Empty, committedItem.Text);
+                    var activeItem = _instructionItems[_currentInstructionStep];
+
+                    if (activeItem.Status != InstructionItemStatus.Completed)
+                    {
+                        activeItem.Status = InstructionItemStatus.Active;
+                        _tts.Speak(activeItem.Text, string.Empty);
+                    }
+
+                    // ★ Advance when TTS queue is empty (step was spoken)
+                    if (!_tts.IsSpeaking && activeItem.Status == InstructionItemStatus.Active)
+                    {
+                        activeItem.Status = InstructionItemStatus.Completed;
+                        _currentInstructionStep++;
+
+                        if (_currentInstructionStep < _instructionItems.Count)
+                            SetActiveInstruction(_instructionItems[_currentInstructionStep].JointName);
+                    }
                 }
                 else
                 {
-                    // Current instruction resolved — find next failing item
-                    var nextItem = _instructionItems
-                        .FirstOrDefault(i => failingFeedback.Contains(i.Text));
+                    // ★ All steps spoken — enter Phase 2
+                    _poseEverCorrect = true;
+                    _activeInstruction = null;
 
-                    if (nextItem != null)
-                    {
-                        if (nextItem.JointName != _activeInstruction)
-                        {
-                            SetActiveInstruction(nextItem.JointName);
-                            _tts.Reset();
-                        }
-                        _tts.Speak(nextItem.Text, string.Empty);
-                    }
-                    else
-                    {
-                        // ★ All joints passing — enter Phase 2
-                        _poseEverCorrect = true;
-                        _activeInstruction = null;
+                    foreach (var item in _instructionItems)
+                        item.Status = InstructionItemStatus.Completed;
 
-                        foreach (var item in _instructionItems)
-                        {
-                            item.Status = InstructionItemStatus.Completed;
-                        }
+                    CorrectionsSection.Visibility = Visibility.Collapsed;
+                    GuidanceDivider.Visibility = Visibility.Collapsed;
+                    AllDoneBanner.Visibility = Visibility.Visible;
 
-                        CorrectionsSection.Visibility = Visibility.Collapsed;
-                        GuidanceDivider.Visibility = Visibility.Collapsed;
-                        AllDoneBanner.Visibility = Visibility.Visible;
-
-                        _tts.Reset();
-                        _tts.Speak("Great! Now hold the pose.", string.Empty);
-                    }
+                    _tts.Reset();
+                    _tts.Speak("Great! Now hold the pose.", string.Empty);
                 }
             }
             else
             {
                 // ════════════════════════════════════════════════════
-                // PHASE 2 — Correction mode
-                // All instructions stay green; deviations appear in
-                // the separate Corrections list above them.
+                // PHASE 2 — Corrections only, instructions stay green
                 // ════════════════════════════════════════════════════
 
                 _correctionItems.Clear();
 
                 if (currentFeedback.Count == 0)
                 {
-                    // Perfect form — hide corrections panel
                     CorrectionsSection.Visibility = Visibility.Collapsed;
                     GuidanceDivider.Visibility = Visibility.Collapsed;
                     AllDoneBanner.Visibility = Visibility.Visible;
 
-                    // Also ensure instruction items stay green
                     foreach (var item in _instructionItems)
-                    {
                         item.Status = InstructionItemStatus.Completed;
-                    }
 
                     _tts.Speak("Good, keep holding.", string.Empty);
                     return;
                 }
 
-                // Populate corrections list
                 foreach (var feedback in currentFeedback)
                 {
                     _correctionItems.Add(new InstructionItem
@@ -395,27 +376,18 @@ namespace capstoneOneShot.Views
                         Status = InstructionItemStatus.Regressed
                     });
 
-                    // Mirror regression on the instruction item too
-                    var matching = _instructionItems
-                        .FirstOrDefault(i => i.Text == feedback);
+                    var matching = _instructionItems.FirstOrDefault(i => i.Text == feedback);
                     if (matching != null)
-                    {
                         matching.Status = InstructionItemStatus.Regressed;
-                    }
                 }
 
-                // Restore green for joints that are still passing
-                foreach (var item in _instructionItems
-                             .Where(i => !failingFeedback.Contains(i.Text)))
-                {
+                foreach (var item in _instructionItems.Where(i => !failingFeedback.Contains(i.Text)))
                     item.Status = InstructionItemStatus.Completed;
-                }
 
                 CorrectionsSection.Visibility = Visibility.Visible;
                 GuidanceDivider.Visibility = Visibility.Visible;
                 AllDoneBanner.Visibility = Visibility.Collapsed;
 
-                // TTS: correction = first deviation, highest priority
                 _tts.Speak(string.Empty, currentFeedback[0]);
             }
         }

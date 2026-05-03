@@ -10,7 +10,9 @@ namespace capstoneOneShot.Services
     public class TextToSpeechService
     {
         private readonly SpeechSynthesizer _synth;
-
+        private readonly Queue<string> _queue = new Queue<string>();
+        private readonly object _lock = new object();
+        private bool _isSpeaking = false;
         private DateTime _lastSpokenTime = DateTime.MinValue;
         private readonly TimeSpan _cooldown = TimeSpan.FromSeconds(1);
 
@@ -22,9 +24,12 @@ namespace capstoneOneShot.Services
             _synth = new SpeechSynthesizer();
             _synth.Rate = 0;   // adjust if needed
             _synth.Volume = 100;
+            _synth.SpeakCompleted += OnSpeakCompleted;
 
+            // Pick best available voice
             var preferred = _synth.GetInstalledVoices()
-                .FirstOrDefault(v => v.VoiceInfo.Name.Contains("Zira"));
+                .FirstOrDefault(v => v.VoiceInfo.Name.Contains("Zira")
+                                  || v.VoiceInfo.Name.Contains("Aria"));
             if (preferred != null)
                 _synth.SelectVoice(preferred.VoiceInfo.Name);
         }
@@ -32,45 +37,71 @@ namespace capstoneOneShot.Services
         // 🔹 MAIN ENTRY POINT
         public void Speak(string instruction, string correction)
         {
-            // Respect cooldown
-            if (DateTime.Now - _lastSpokenTime < _cooldown)
-                return;
-
-            // 🔴 PRIORITY: Correction always overrides instruction
+            // Correction always takes priority
             if (!string.IsNullOrWhiteSpace(correction))
             {
-                if (correction != _lastCorrection)
-                {
-                    SpeakInternal(correction);
-                    _lastCorrection = correction;
-                    _lastSpokenTime = DateTime.Now;
-                }
+                if (correction == _lastCorrection) return;
+                _lastCorrection = correction;
+                Enqueue(correction);
                 return;
             }
 
-            // 🟢 Instruction (only if no correction active)
             if (!string.IsNullOrWhiteSpace(instruction))
             {
-                if (instruction != _lastInstruction)
-                {
-                    SpeakInternal(instruction);
-                    _lastInstruction = instruction;
-                    _lastSpokenTime = DateTime.Now;
-                }
+                if (instruction == _lastInstruction) return;
+                _lastInstruction = instruction;
+                Enqueue(instruction);
             }
         }
 
-        private void SpeakInternal(string text)
+        private void Enqueue(string text)
         {
-            _synth.SpeakAsyncCancelAll(); // interrupt anything currently speaking
-            _synth.SpeakAsync(text);
+            lock (_lock)
+            {
+                // Don't queue the same message twice in a row
+                if (_queue.Count > 0 && _queue.Peek() == text) return;
+
+                _queue.Enqueue(text);
+                TryPlayNext();
+            }
+        }
+
+        public bool IsSpeaking
+        {
+            get { lock (_lock) { return _isSpeaking || _queue.Count > 0; } }
+        }
+
+        private void TryPlayNext()
+        {
+            // Must be called inside _lock
+            if (_isSpeaking || _queue.Count == 0) return;
+
+            _isSpeaking = true;
+            var next = _queue.Dequeue();
+            // SpeakAsync on a thread so it doesn't block UI
+            Task.Run(() => _synth.SpeakAsync(next));
+        }
+
+        private void OnSpeakCompleted(object sender, SpeakCompletedEventArgs e)
+        {
+            lock (_lock)
+            {
+                _isSpeaking = false;
+                TryPlayNext();
+            }
         }
 
         // Optional: reset state when pose changes
         public void Reset()
         {
-            _lastInstruction = string.Empty;
-            _lastCorrection = string.Empty;
+            lock (_lock)
+            {
+                _queue.Clear();
+                _synth.SpeakAsyncCancelAll();
+                _isSpeaking = false;
+                _lastInstruction = string.Empty;
+                _lastCorrection = string.Empty;
+            }
         }
     }
 }
