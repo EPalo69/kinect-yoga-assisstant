@@ -58,49 +58,64 @@
             </Border>
 
             <!-- Stats row -->
+            <!-- Stats row -->
             <Grid Margin="0,0,0,32">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0" Background="#111827"
-                        CornerRadius="10" Padding="16" Margin="0,0,8,0">
+            CornerRadius="10" Padding="16" Margin="0,0,6,0">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="HOLD TIME" FontSize="10"
-                                   FontWeight="Bold" Foreground="#6B7280"
-                                   HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                        <TextBlock x:Name="HoldTimeLabel"
-                                   Text="0s" FontSize="24" FontWeight="Bold"
-                                   Foreground="#22C55E"
-                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="SESSION TIME" FontSize="10"
+                       FontWeight="Bold" Foreground="#6B7280"
+                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                        <TextBlock x:Name="TotalTimeLabel"
+                       Text="00:00" FontSize="24" FontWeight="Bold"
+                       Foreground="#22C55E"
+                       HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Column="1" Background="#111827"
-                        CornerRadius="10" Padding="16" Margin="8,0,8,0">
+            CornerRadius="10" Padding="16" Margin="6,0,6,0">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="BEST SCORE" FontSize="10"
-                                   FontWeight="Bold" Foreground="#6B7280"
-                                   HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                        <TextBlock x:Name="BestScoreLabel"
-                                   Text="0%" FontSize="24" FontWeight="Bold"
-                                   Foreground="#F59E0B"
-                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="HOLD TIME" FontSize="10"
+                       FontWeight="Bold" Foreground="#6B7280"
+                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                        <TextBlock x:Name="HoldTimeLabel"
+                       Text="0s" FontSize="24" FontWeight="Bold"
+                       Foreground="#22C55E"
+                       HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
                 <Border Grid.Column="2" Background="#111827"
-                        CornerRadius="10" Padding="16" Margin="8,0,0,0">
+            CornerRadius="10" Padding="16" Margin="6,0,6,0">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="BEST SCORE" FontSize="10"
+                       FontWeight="Bold" Foreground="#6B7280"
+                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                        <TextBlock x:Name="BestScoreLabel"
+                       Text="0%" FontSize="24" FontWeight="Bold"
+                       Foreground="#F59E0B"
+                       HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="3" Background="#111827"
+            CornerRadius="10" Padding="16" Margin="6,0,0,0">
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="DIFFICULTY" FontSize="10"
-                                   FontWeight="Bold" Foreground="#6B7280"
-                                   HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                       FontWeight="Bold" Foreground="#6B7280"
+                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
                         <TextBlock x:Name="DifficultyLabel"
-                                   Text="Beginner" FontSize="18" FontWeight="Bold"
-                                   Foreground="#A855F7"
-                                   HorizontalAlignment="Center"/>
+                       Text="Beginner" FontSize="18" FontWeight="Bold"
+                       Foreground="#A855F7"
+                       HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
             </Grid>

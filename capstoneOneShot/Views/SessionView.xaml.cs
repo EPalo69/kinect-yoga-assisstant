@@ -23,8 +23,11 @@ namespace capstoneOneShot.Views
 
         private int _currentPoseIndex = 0;
         private int _holdSeconds = 0;
+        private int _totalSessionSeconds = 0;
+        private DispatcherTimer _sessionTimer;
         private DispatcherTimer _holdTimer;
-        
+        private bool _currentFrameCorrect = false;
+
         private PauseGestureService _pauseService;
         private bool _isPaused = false;
         private PointerSelectionService _pointerService;
@@ -46,21 +49,21 @@ namespace capstoneOneShot.Views
         private ObservableCollection<InstructionItem> _instructionItems;
         private ObservableCollection<InstructionItem> _correctionItems;
 
-        private static SolidColorBrush Hex(string hex) => (SolidColorBrush)new BrushConverter().ConvertFrom(hex);
-
-        //public SessionView(KinectManager kinectManager, DifficultyLevel difficulty)
-        //{
-        //    InitializeComponent();
-        //    _kinectManager = kinectManager;
-        //    _evaluator = new PoseEvaluator();
-        //    _poses = PoseLibrary.GetPosesByDifficulty(difficulty);
-        //    _tts = new TextToSpeechService();
-
-        //    SetupUI(difficulty.ToString());
-        //    SetupKinect();
-        //    LoadPose(0);
-        //    StartHoldTimer();
-        //}
+        // ★ Map JointType to the string names used in rules
+        private static readonly Dictionary<JointType, string[]> JointTypeToRuleNames
+            = new Dictionary<JointType, string[]>
+            {
+                { JointType.ElbowLeft,    new[] { "LeftElbow"    } },
+                { JointType.ElbowRight,   new[] { "RightElbow"   } },
+                { JointType.ShoulderLeft, new[] { "LeftShoulder" } },
+                { JointType.ShoulderRight,new[] { "RightShoulder"} },
+                { JointType.KneeLeft,     new[] { "LeftKnee"     } },
+                { JointType.KneeRight,    new[] { "RightKnee"    } },
+                { JointType.HipLeft,      new[] { "LeftHip"      } },
+                { JointType.HipRight,     new[] { "RightHip"     } },
+                { JointType.WristLeft,    new[] { "LeftWrist"     } },
+                { JointType.WristRight,   new[] { "RightWrist"   } },
+            };
 
         public SessionView(KinectManager kinectManager, PoseDefinition pose)
         {
@@ -74,6 +77,7 @@ namespace capstoneOneShot.Views
             SetupKinect();
             LoadPose(0);
             StartHoldTimer();
+            StartSessionTimer();
         }
 
         private void SetupUI(string difficultyText)
@@ -119,11 +123,12 @@ namespace capstoneOneShot.Views
             _tts.Reset();
             _poseEverCorrect = false;
             _activeInstruction = null;
+            _currentInstructionStep = 0;
+            _currentFrameCorrect = false;
 
             var pose = _poses[index];
             CurrentPoseLabel.Text = pose.Name;
             //PoseDescriptionLabel.Text = pose.Description;
-            _currentInstructionStep = 0;
             //ScoreLabel.Text = "0%";
             HoldTimerLabel.Text = "0s";
             FeedbackList.ItemsSource = null;
@@ -207,17 +212,36 @@ namespace capstoneOneShot.Views
             _holdTimer.Start();
         }
 
+        private void StartSessionTimer()
+        {
+            _sessionTimer = new DispatcherTimer();
+            _sessionTimer.Interval = TimeSpan.FromSeconds(1);
+            _sessionTimer.Tick += SessionTimer_Tick;
+            _sessionTimer.Start();
+        }
+
         private void HoldTimer_Tick(object sender, EventArgs e)
         {
-            _holdSeconds++;
-            HoldTimerLabel.Text = $"{_holdSeconds}s";
-
-            int targetHold = _currentPose.HoldSeconds > 0 ? _currentPose.HoldSeconds : 10;
-            if (_holdSeconds >= targetHold)
+            if (_currentFrameCorrect)
             {
-                _holdTimer.Stop();
-                AdvancePose();
+                _holdSeconds++;
+                HoldTimerLabel.Text = $"{_holdSeconds}s";
+
+                int targetHold = _currentPose?.HoldSeconds > 0 ? _currentPose.HoldSeconds : 10;
+                if (_holdSeconds >= targetHold)
+                {
+                    _holdTimer.Stop();
+                    AdvancePose();
+                }
             }
+        }
+
+        private void SessionTimer_Tick(object sender, EventArgs e)
+        {
+            _totalSessionSeconds++;
+            int minutes = _totalSessionSeconds / 60;
+            int seconds = _totalSessionSeconds % 60;
+            SessionTimerLabel.Text = $"{minutes.ToString("D2")}:{seconds.ToString("D2")}";
         }
 
         private void AdvancePose()
@@ -276,11 +300,12 @@ namespace capstoneOneShot.Views
             // Track scores for results screen
             _frameScores.Add(result.Score);
             if (result.Score > _bestScore) _bestScore = result.Score;
+            _currentFrameCorrect = result.IsPoseCorrect;
 
             Dispatcher.Invoke(() =>
             {
                 UpdateScoreDisplay(result);
-                DrawSkeleton(skeleton);
+                DrawSkeleton(skeleton, result);
                 UpdateTTS(result);
             });
         }
@@ -440,9 +465,17 @@ namespace capstoneOneShot.Views
             };
         }
 
-        private void DrawSkeleton(Skeleton skeleton)
+        private void DrawSkeleton(Skeleton skeleton, EvaluationResult result)
         {
             SkeletonCanvas.Children.Clear();
+
+            // ★ Build a fast lookup of failing joint names
+            var failingJoints = new HashSet<string>(
+                result.JointDeviations
+                      .Where(j => !j.IsPassing)
+                      .Select(j => j.JointName)
+            );
+
             var bones = new[]
             {
                 (JointType.Head,           JointType.ShoulderCenter),
@@ -460,42 +493,67 @@ namespace capstoneOneShot.Views
                 (JointType.HipRight,       JointType.KneeRight),
                 (JointType.KneeRight,      JointType.AnkleRight),
             };
-            foreach (var (s, e) in bones) DrawBone(skeleton, s, e);
-            foreach (var jt in JointAngleCalculator.AnalysisJoints) DrawJoint(skeleton.Joints[jt]);
+
+            foreach (var (s, e) in bones) DrawBone(skeleton, s, e, failingJoints);
+            foreach (var jt in JointAngleCalculator.AnalysisJoints)
+                DrawJoint(skeleton.Joints[jt], failingJoints);
         }
 
-        private void DrawBone(Skeleton skeleton, JointType a, JointType b)
+        private bool IsJointFailing(JointType jt, HashSet<string> failingJoints)
+        {
+            if (!JointTypeToRuleNames.ContainsKey(jt)) return false;
+            return JointTypeToRuleNames[jt].Any(name => failingJoints.Contains(name));
+        }
+
+
+        private void DrawBone(Skeleton skeleton, JointType a, JointType b,
+                              HashSet<string> failingJoints)
         {
             var j1 = skeleton.Joints[a];
             var j2 = skeleton.Joints[b];
+
             if (j1.TrackingState == JointTrackingState.NotTracked ||
                 j2.TrackingState == JointTrackingState.NotTracked) return;
 
+            bool failing = IsJointFailing(a, failingJoints) ||
+                           IsJointFailing(b, failingJoints);
+
             var p1 = MapToCanvas(j1.Position);
             var p2 = MapToCanvas(j2.Position);
+
             SkeletonCanvas.Children.Add(new Line
             {
                 X1 = p1.X,
                 Y1 = p1.Y,
                 X2 = p2.X,
                 Y2 = p2.Y,
-                Stroke = new SolidColorBrush(Color.FromArgb(200, 100, 181, 246)),
+                Stroke = failing
+                                    ? new SolidColorBrush(Color.FromArgb(200, 255, 107, 107)) // ★ red
+                                    : new SolidColorBrush(Color.FromArgb(200, 100, 181, 246)),
                 StrokeThickness = 3
             });
         }
 
-        private void DrawJoint(Joint joint)
+        private void DrawJoint(Joint joint, HashSet<string> failingJoints)
         {
             if (joint.TrackingState == JointTrackingState.NotTracked) return;
+
+            bool failing = IsJointFailing(joint.JointType, failingJoints);
+
             var p = MapToCanvas(joint.Position);
             var c = new Ellipse
             {
                 Width = JointRadius * 2,
                 Height = JointRadius * 2,
-                Fill = Brushes.White,
-                Stroke = new SolidColorBrush(Color.FromRgb(100, 181, 246)),
+                Fill = failing
+                                    ? new SolidColorBrush(Color.FromRgb(255, 107, 107)) // ★ red
+                                    : Brushes.White,
+                Stroke = failing
+                                    ? new SolidColorBrush(Color.FromRgb(255, 60, 60))   // ★ red ring
+                                    : new SolidColorBrush(Color.FromRgb(100, 181, 246)),
                 StrokeThickness = 2
             };
+
             Canvas.SetLeft(c, p.X - JointRadius);
             Canvas.SetTop(c, p.Y - JointRadius);
             SkeletonCanvas.Children.Add(c);
@@ -546,6 +604,7 @@ namespace capstoneOneShot.Views
             {
                 _isPaused = true;
                 _holdTimer?.Stop();
+                _sessionTimer?.Stop();
                 _tts.Reset();
                 PauseOverlay.Visibility = Visibility.Visible;
                 PauseOverlay.UpdateLayout();
@@ -619,6 +678,7 @@ namespace capstoneOneShot.Views
             _pointerService?.Stop();
             _pointerService?.ClearButtons();
             _pointerService = null;
+            _sessionTimer?.Start();
 
             if (_currentBodyStatus == BodyDetectionStatus.Detected)
                 _holdTimer?.Start();
@@ -646,6 +706,7 @@ namespace capstoneOneShot.Views
         private void EndSession()
         {
             _holdTimer?.Stop();
+            _sessionTimer?.Stop();
             _tts.Reset();
             UnhookKinect();
             OpenResultsScreen();
@@ -655,15 +716,18 @@ namespace capstoneOneShot.Views
         private void OpenResultsScreen()
         {
             double avg = _frameScores.Count > 0 ? _frameScores.Average() : 0;
+            int lastValidIndex = Math.Min(_currentPoseIndex, _poses.Count - 1);
+            var poseToReport = _poses[lastValidIndex];
 
             var results = new SessionResultsView(_kinectManager, _lastCompletedPose ?? _poses[0]);
-            results.SetResults(avg, _bestScore, _holdSeconds);
+            results.SetResults(avg, _bestScore, _holdSeconds, _totalSessionSeconds);
             results.Show();
         }
 
         protected override void OnClosed(EventArgs e)
         {
             _holdTimer?.Stop();
+            _sessionTimer?.Stop();
             UnhookKinect();
             base.OnClosed(e);
         }

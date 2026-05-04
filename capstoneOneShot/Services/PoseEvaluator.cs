@@ -4,31 +4,68 @@ using capstoneOneShot.Models;
 
 namespace capstoneOneShot.Services
 {
+    //public class EvaluationResult
+    //{
+    //    public double Score { get; set; }
+    //    public List<string> Feedback { get; set; } = new List<string>();
+    //    public bool IsPoseCorrect => Score >= 70; // lowered from 80
+    //}
+
+    // ── Classification tiers ────────────────────────────────────────────
+    public enum PoseClassification
+    {
+        Correct,      // ≥ 80% score
+        Acceptable,   // ≥ 60% score
+        Incorrect     // < 60% score
+    }
+
+    // ── Per-joint deviation detail ──────────────────────────────────────
+    public class JointDeviation
+    {
+        public string JointName { get; set; }
+        public double ActualAngle { get; set; }
+        public double ExpectedMin { get; set; }
+        public double ExpectedMax { get; set; }
+        public double DeviationDeg { get; set; } // 0 if within range, else degrees off
+        public bool IsPassing { get; set; }
+        public string Feedback { get; set; }
+    }
+
     public class EvaluationResult
     {
         public double Score { get; set; }
         public List<string> Feedback { get; set; } = new List<string>();
-        public bool IsPoseCorrect => Score >= 70; // lowered from 80
+
+        // ★ Per-joint breakdown
+        public List<JointDeviation> JointDeviations { get; set; } = new List<JointDeviation>();
+
+        // ★ Three-tier classification
+        public PoseClassification Classification =>
+            Score >= 80 ? PoseClassification.Correct :
+            Score >= 60 ? PoseClassification.Acceptable :
+                          PoseClassification.Incorrect;
+
+        // ★ Convenience bools
+        public bool IsPoseCorrect => Classification == PoseClassification.Correct;
+        public bool IsPoseAcceptable => Classification == PoseClassification.Acceptable;
+        public bool IsPoseIncorrect => Classification == PoseClassification.Incorrect;
+
+        // ★ Worst deviation across all joints (useful for overall feedback)
+        public double MaxDeviationDeg =>
+            JointDeviations.Count > 0
+                ? JointDeviations.Max(j => j.DeviationDeg)
+                : 0;
+
+        public override string ToString() => Score.ToString("F0");
     }
 
     public class PoseEvaluator
     {
-        // ── Confidence window ───────────────────────────────────────────
-        // Instead of judging every single frame, we keep a rolling buffer
-        // of the last N frames and only report a joint as "failing" if it
-        // fails in the majority of those frames. This stops a single noisy
-        // frame from flashing a red correction at the user.
-        private const int WindowSize = 10; // ~0.33 seconds at 30fps
+        private const int WindowSize = 10;   // ~0.33s at 30fps
+        private const double AngleTolerance = 15.0; // degrees wiggle room
 
-        // jointName -> circular buffer of pass/fail bools
-        private readonly Dictionary<string, Queue<bool>> _history
-            = new Dictionary<string, Queue<bool>>();
-
-        // ── Angle tolerance ─────────────────────────────────────────────
-        // Added on top of each pose's min/max to give the user wiggle room.
-        // Think of this as the "close enough" buffer — like how rhythm games
-        // have a timing window so you don't have to be frame-perfect.
-        private const double AngleTolerance = 15.0; // degrees
+        private readonly Dictionary<string, Queue<bool>> _history = new Dictionary<string, Queue<bool>>();
+        private readonly Dictionary<string, Queue<double>> _angleHistory = new Dictionary<string, Queue<double>>();
 
         public EvaluationResult Evaluate(PoseDefinition pose,
                                          Dictionary<string, double> userAngles)
@@ -41,11 +78,11 @@ namespace capstoneOneShot.Services
                 if (!userAngles.TryGetValue(rule.JointName, out double angle))
                     continue;
 
-                // Apply tolerance — widen the acceptable window
+                // ── Pass/fail with tolerance ────────────────────────────
                 bool framePass = angle >= (rule.MinAngle - AngleTolerance)
                               && angle <= (rule.MaxAngle + AngleTolerance);
 
-                // Push into history buffer
+                // ── Rolling pass/fail buffer ────────────────────────────
                 if (!_history.ContainsKey(rule.JointName))
                     _history[rule.JointName] = new Queue<bool>();
 
@@ -53,20 +90,51 @@ namespace capstoneOneShot.Services
                 buf.Enqueue(framePass);
                 if (buf.Count > WindowSize) buf.Dequeue();
 
-                // A joint is considered passing if it passes in >60% of
-                // the recent frames — same idea as a "perfect" window in
-                // Guitar Hero / Just Dance
                 double passRate = buf.Count(x => x) / (double)buf.Count;
                 bool smoothedPass = passRate >= 0.6;
 
+                // ── Rolling angle buffer for stable deviation ───────────
+                if (!_angleHistory.ContainsKey(rule.JointName))
+                    _angleHistory[rule.JointName] = new Queue<double>();
+
+                var angleBuf = _angleHistory[rule.JointName];
+                angleBuf.Enqueue(angle);
+                if (angleBuf.Count > WindowSize) angleBuf.Dequeue();
+
+                double smoothedAngle = angleBuf.Average();
+
+                // ── Calculate deviation ─────────────────────────────────
+                double deviation = 0;
+                if (smoothedAngle < rule.MinAngle - AngleTolerance)
+                    deviation = (rule.MinAngle - AngleTolerance) - smoothedAngle;
+                else if (smoothedAngle > rule.MaxAngle + AngleTolerance)
+                    deviation = smoothedAngle - (rule.MaxAngle + AngleTolerance);
+
+                // ── Build per-joint record ──────────────────────────────
+                result.JointDeviations.Add(new JointDeviation
+                {
+                    JointName = rule.JointName,
+                    ActualAngle = smoothedAngle,
+                    ExpectedMin = rule.MinAngle,
+                    ExpectedMax = rule.MaxAngle,
+                    DeviationDeg = deviation,
+                    IsPassing = smoothedPass,
+                    Feedback = rule.Feedback
+                });
+
+                result.JointDeviations = result.JointDeviations
+                    .OrderByDescending(j => j.DeviationDeg)
+                    .ToList();
+
+                result.Feedback = result.JointDeviations
+                    .Where(j => !j.IsPassing)
+                    .Select(j => j.Feedback)
+                    .ToList();
+
                 if (smoothedPass)
-                {
                     passed++;
-                }
                 else
-                {
                     result.Feedback.Add(rule.Feedback);
-                }
             }
 
             result.Score = pose.Rules.Count > 0
@@ -76,8 +144,10 @@ namespace capstoneOneShot.Services
             return result;
         }
 
-        // Call this when switching to a new pose so old history
-        // doesn't bleed into the new pose's evaluation
-        public void ResetHistory() => _history.Clear();
+        public void ResetHistory()
+        {
+            _history.Clear();
+            _angleHistory.Clear();
+        }
     }
 }

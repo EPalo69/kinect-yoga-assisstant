@@ -26,6 +26,7 @@ namespace capstoneOneShot.Views
         private double _averageAccuracy;
         private double _bestScore;
         private int _holdSeconds;
+        private int _totalSessionSeconds;
 
         public SessionResultsView(KinectManager kinectManager, PoseDefinition pose)
         {
@@ -34,11 +35,12 @@ namespace capstoneOneShot.Views
             _pose = pose;
         }
 
-        public void SetResults(double averageAccuracy, double bestScore, int holdSeconds)
+        public void SetResults(double averageAccuracy, double bestScore, int holdSeconds, int totalSessionSeconds)
         {
             _averageAccuracy = averageAccuracy;
             _bestScore = bestScore;
             _holdSeconds = holdSeconds;
+            _totalSessionSeconds = totalSessionSeconds; // ★
             Loaded += (s, e) => PopulateUI();
         }
 
@@ -49,6 +51,9 @@ namespace capstoneOneShot.Views
             HoldTimeLabel.Text = _holdSeconds.ToString() + "s";
             BestScoreLabel.Text = _bestScore.ToString("F0") + "%";
             DifficultyLabel.Text = _pose.Difficulty.ToString();
+            int minutes = _totalSessionSeconds / 60;
+            int seconds = _totalSessionSeconds % 60;
+            TotalTimeLabel.Text = $"{minutes.ToString("D2")}:{seconds.ToString("D2")}";
 
             // Result icon + feedback based on score
             if (_averageAccuracy >= 80)

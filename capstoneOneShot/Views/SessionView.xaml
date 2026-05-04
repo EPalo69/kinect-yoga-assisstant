@@ -123,17 +123,29 @@
                     </StackPanel>
                 </Border>
 
-                <!-- HUD: hold timer top-right -->
+                <!-- HUD: TIMERS -->
                 <Border Background="#AA000000" CornerRadius="8" Padding="12,8"
-                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,60,0,0">
+                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,60,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="HOLD  " Foreground="#9E9E9E" FontSize="13" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="HoldTimerLabel" Text="0s" Foreground="#4CAF50"
-                                   FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="SESSION TIME  " Foreground="#9E9E9E" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="SessionTimerLabel" Text="00:00" Foreground="#4CAF50"
+                        FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
+                
+                <Border Background="#AA000000" CornerRadius="8" Padding="12,8"
+                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,110,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="HELD POSE TIME  " Foreground="#9E9E9E" FontSize="13" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="HoldTimerLabel" Text="0s" Foreground="#4CAF50"
+                                FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                
 
-                <!-- HUD: score bottom-center -->
+
+
+                    <!-- HUD: score bottom-center -->
                 <!-- 
                 <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24">
                     <StackPanel HorizontalAlignment="Center">
