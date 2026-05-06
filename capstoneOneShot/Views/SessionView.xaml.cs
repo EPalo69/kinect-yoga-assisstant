@@ -160,9 +160,17 @@ namespace capstoneOneShot.Views
             CorrectionsSection.Visibility = Visibility.Collapsed;
             GuidanceDivider.Visibility = Visibility.Collapsed;
             AllDoneBanner.Visibility = Visibility.Collapsed;
+            CorrectionBanner.Visibility = Visibility.Collapsed;
 
             if (_instructionItems.Count > 0)
+            {
                 SetActiveInstruction(_instructionItems[0].JointName);
+                CurrentInstructionLabel.Text = _instructionItems[0].Text;
+            }
+            else
+            {
+                CurrentInstructionLabel.Text = "";
+            }
         }
 
         private void SetActiveInstruction(string jointName)
@@ -175,7 +183,8 @@ namespace capstoneOneShot.Views
                     item.Status != InstructionItemStatus.Completed)
                 {
                     item.Status = InstructionItemStatus.Active;
-
+                    // Update the HUD overlay to show only the current instruction
+                    CurrentInstructionLabel.Text = item.Text;
                 }
             }
         }
@@ -336,9 +345,16 @@ namespace capstoneOneShot.Views
                             ? InstructionItemStatus.Completed
                             : item.Status; // keep current
 
+                    // Show correction in HUD overlay
+                    CorrectionBanner.Visibility = Visibility.Visible;
+                    CorrectionLabel.Text = currentFeedback[0];
+
                     _tts.Speak(string.Empty, currentFeedback[0]);
                     return;
                 }
+
+                // Hide correction when no failures
+                CorrectionBanner.Visibility = Visibility.Collapsed;
 
                 // ★ No joint failures — advance through instruction steps
                 if (_currentInstructionStep < _instructionItems.Count)
@@ -348,6 +364,7 @@ namespace capstoneOneShot.Views
                     if (activeItem.Status != InstructionItemStatus.Completed)
                     {
                         activeItem.Status = InstructionItemStatus.Active;
+                        CurrentInstructionLabel.Text = activeItem.Text;
                         _tts.Speak(activeItem.Text, string.Empty);
                     }
 
@@ -372,6 +389,8 @@ namespace capstoneOneShot.Views
 
                     CorrectionsSection.Visibility = Visibility.Collapsed;
                     GuidanceDivider.Visibility = Visibility.Collapsed;
+                    CorrectionBanner.Visibility = Visibility.Collapsed;
+                    CurrentInstructionLabel.Text = "Great! Now hold the pose.";
                     AllDoneBanner.Visibility = Visibility.Visible;
 
                     _tts.Reset();
@@ -390,6 +409,8 @@ namespace capstoneOneShot.Views
                 {
                     CorrectionsSection.Visibility = Visibility.Collapsed;
                     GuidanceDivider.Visibility = Visibility.Collapsed;
+                    CorrectionBanner.Visibility = Visibility.Collapsed;
+                    CurrentInstructionLabel.Text = "Hold the pose steady.";
                     AllDoneBanner.Visibility = Visibility.Visible;
 
                     foreach (var item in _instructionItems)
@@ -415,8 +436,10 @@ namespace capstoneOneShot.Views
                 foreach (var item in _instructionItems.Where(i => !failingFeedback.Contains(i.Text)))
                     item.Status = InstructionItemStatus.Completed;
 
-                CorrectionsSection.Visibility = Visibility.Visible;
-                GuidanceDivider.Visibility = Visibility.Visible;
+                // Show correction in HUD overlay
+                CorrectionBanner.Visibility = Visibility.Visible;
+                CorrectionLabel.Text = currentFeedback[0];
+                CurrentInstructionLabel.Text = "Correction needed";
                 AllDoneBanner.Visibility = Visibility.Collapsed;
 
                 _tts.Speak(string.Empty, currentFeedback[0]);
@@ -730,113 +753,6 @@ namespace capstoneOneShot.Views
             _sessionTimer?.Stop();
             UnhookKinect();
             base.OnClosed(e);
-        }
-
-
-
-        // ── DEV TEST METHODS (remove before release) ──────────────────────────
-
-        // Simulates session start — all joints failing, Phase 1 begins
-        private void TestPhase1_Click(object sender, RoutedEventArgs e)
-        {
-            _poseEverCorrect = false;
-            _activeInstruction = null;
-            _tts.Reset();
-
-            // Rebuild panel as if session just loaded
-            BuildInstructionPanel(_currentPose);
-
-            // Simulate first skeleton frame: all joints failing
-            var fakeResult = new EvaluationResult
-            {
-                Score = 20,
-                Feedback = _currentPose.Rules.Select(r => r.Feedback).ToList()
-            };
-
-            UpdateTTS(fakeResult);
-        }
-
-        // Simulates fixing one joint at a time — click repeatedly to walk through
-        private int _testJointIndex = 0;
-        private List<string> _testRemainingFeedback = null;
-
-        private void TestProgress_Click(object sender, RoutedEventArgs e)
-        {
-            // Initialize remaining feedback list on first click
-            if (_testRemainingFeedback == null || _testRemainingFeedback.Count == 0)
-                _testRemainingFeedback = _currentPose.Rules.Select(r => r.Feedback).ToList();
-
-            // Remove the first item (simulate user fixing that joint)
-            if (_testRemainingFeedback.Count > 0)
-                _testRemainingFeedback.RemoveAt(0);
-
-            var fakeResult = new EvaluationResult
-            {
-                Score = 100 - (_testRemainingFeedback.Count * 10),
-                Feedback = new List<string>(_testRemainingFeedback)
-            };
-
-            UpdateTTS(fakeResult);
-
-            // If all fixed, reset for next test cycle
-            if (_testRemainingFeedback.Count == 0)
-                _testRemainingFeedback = null;
-        }
-
-        // Simulates reaching Phase 2 — all joints correct
-        private void TestPhase2_Click(object sender, RoutedEventArgs e)
-        {
-            var fakeResult = new EvaluationResult
-            {
-                Score = 100,
-                Feedback = new List<string>()
-            };
-
-            UpdateTTS(fakeResult);
-        }
-
-        // Simulates a correction in Phase 2 — one joint deviates
-        private void TestCorrection_Click(object sender, RoutedEventArgs e)
-        {
-            if (!_poseEverCorrect)
-            {
-                MessageBox.Show("Run '★ Sim Phase 2' first to enter Phase 2.", "Test");
-                return;
-            }
-
-            var fakeResult = new EvaluationResult
-            {
-                Score = 75,
-                Feedback = new List<string>
-        {
-            _currentPose.Rules[0].Feedback  // first joint deviates
-        }
-            };
-
-            UpdateTTS(fakeResult);
-        }
-
-        // Simulates regression — user fixed joint A, then drops it while working on B
-        private void TestRegress_Click(object sender, RoutedEventArgs e)
-        {
-            if (!_poseEverCorrect)
-            {
-                MessageBox.Show("Run '★ Sim Phase 2' first to enter Phase 2.", "Test");
-                return;
-            }
-
-            // Two joints regressed at once
-            var fakeResult = new EvaluationResult
-            {
-                Score = 50,
-                Feedback = new List<string>
-        {
-            _currentPose.Rules[0].Feedback,
-            _currentPose.Rules[1].Feedback
-        }
-            };
-
-            UpdateTTS(fakeResult);
         }
 
 
