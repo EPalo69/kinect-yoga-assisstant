@@ -9,116 +9,6 @@
         WindowStyle="None"
         AllowsTransparency="True">
 
-    <Window.Resources>
-
-        <!-- ── Metric ball button style (no hover chrome) ── -->
-        <Style x:Key="GhostButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <ContentPresenter/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── Pause action buttons ── -->
-        <Style x:Key="PauseButtonPrimary" TargetType="Button">
-            <Setter Property="Background" Value="#4DD0E1"/>
-            <Setter Property="Foreground" Value="#060A12"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="24,12"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="10" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="PauseButtonSecondary" TargetType="Button">
-            <Setter Property="Background" Value="#14FFFFFF"/>
-            <Setter Property="Foreground" Value="#6B7A8D"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="24,12"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="PauseButtonDanger" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FF5252"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="24,12"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#4DFF5252"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="NextButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#4DD0E1"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="0,10"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#594DD0E1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Width" Value="120"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="24" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-    </Window.Resources>
-
-    <!-- ROOT: Top bar + main content -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="44"/>
@@ -143,7 +33,7 @@
 
                 <!-- Title -->
                 <TextBlock Grid.Column="0"
-                           Text="ROM TEST"
+                           Text="ROM ASSESSMENT"
                            FontSize="16"
                            FontWeight="Bold"
                            Foreground="#4DD0E1"
@@ -160,7 +50,6 @@
                                Foreground="#6B7A8D"
                                VerticalAlignment="Center"
                                Margin="0,0,10,0"/>
-                    <!-- Pip indicators — fill via code-behind -->
                     <ItemsControl x:Name="ProgressPips">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -170,468 +59,361 @@
                     </ItemsControl>
                 </StackPanel>
 
-                <!-- Pause hint (right) empty as it moved -->
-                <StackPanel Grid.Column="2"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center">
-                </StackPanel>
+                <!-- Right placeholder -->
+                <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
         <!-- ══════════════════════════════════════════
-             MAIN: Camera (fills width) + Metrics sidebar
+             MAIN: Camera fills entire width (no sidebar)
         ══════════════════════════════════════════ -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <!-- Camera zone -->
-                <ColumnDefinition Width="180"/>
-                <!-- Metrics panel -->
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="1" Background="#050810" ClipToBounds="True">
+            <Grid>
 
-            <!-- ── CAMERA ZONE ── -->
-            <Border Grid.Column="0"
-                    Background="#050810"
-                    ClipToBounds="True">
-                <Grid>
+                <!-- Layer 1: Camera feed -->
+                <Image x:Name="CameraFeed" Stretch="Uniform"/>
 
-                    <!-- Layer 1: Camera feed -->
-                    <Image x:Name="CameraFeed" Stretch="UniformToFill"/>
+                <!-- Layer 2: Skeleton canvas -->
+                <Canvas x:Name="SkeletonCanvas"/>
 
-                    <!-- Layer 2: Skeleton canvas -->
-                    <Canvas x:Name="SkeletonCanvas"/>
+                <!-- Layer 3: Pause gesture ring canvas -->
+                <Canvas x:Name="PauseGestureCanvas" IsHitTestVisible="True"/>
 
-                    <!-- Layer 3: Pause gesture ring canvas (PauseGestureService draws here) -->
-                    <Canvas x:Name="PauseGestureCanvas" IsHitTestVisible="False"/>
-
-                    <!-- Layer 4: Top HUD badges -->
-                    <Grid VerticalAlignment="Top" Margin="16,14,16,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Tracking status badge -->
-                        <Border Grid.Column="0"
-                                Background="#BF080C14"
-                                BorderBrush="#33A5F5B2"
-                                BorderThickness="1"
-                                CornerRadius="14"
-                                Padding="10,5">
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse x:Name="TrackingDot"
-                                         Width="7" Height="7"
-                                         Fill="#69F0AE"
-                                         VerticalAlignment="Center"
-                                         Margin="0,0,7,0"/>
-                                <TextBlock x:Name="TrackingStatusLabel"
-                                           Text="Tracking"
-                                           FontSize="11"
-                                           FontWeight="Medium"
-                                           Foreground="#69F0AE"/>
-                            </StackPanel>
+                <!-- Layer 4: No body detected overlay -->
+                <Border x:Name="NoBodyOverlay" Background="#CC1A1A2E" Visibility="Visible">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Background="#FFCC00" CornerRadius="50"
+                                Width="80" Height="80" HorizontalAlignment="Center" Margin="0,0,0,16">
+                            <TextBlock Text="⚠" FontSize="40" Foreground="#1A1A2E"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-
-                        <!-- Test name badge (right) -->
-                        <Border Grid.Column="2"
-                                Background="#BF080C14"
-                                BorderBrush="#334DD0E1"
-                                BorderThickness="1"
-                                CornerRadius="14"
-                                Padding="12,5">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock x:Name="TestNameLabel"
-                                           Text="Shoulder Raise"
-                                           FontSize="11"
-                                           Foreground="#6B7A8D"/>
-                                <TextBlock x:Name="TestNumberBadge"
-                                           Text=" #1"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="#E8EDF2"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <!-- Layer 5: Large countdown (centre, subtle) -->
-                    <StackPanel HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                IsHitTestVisible="False">
-                        <TextBlock x:Name="CountdownText"
-                                   Text="5"
-                                   FontSize="120"
-                                   FontWeight="Bold"
-                                   Foreground="#1EFFFFFF"
+                        <TextBlock Text="No Body Detected"
+                                   FontSize="24" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="Step in front of the Kinect so your full body is visible."
+                                   FontSize="14" Foreground="#BDBDBD" TextAlignment="Center"
+                                   TextWrapping="Wrap" MaxWidth="400" Margin="0,0,0,24"
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Text="SECONDS REMAINING"
-                                   FontSize="11"
-                                   Foreground="#1EFFFFFF"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,-10,0,0"/>
+                        <Border Background="#22FFFFFF" CornerRadius="8" Padding="20,16" MaxWidth="420">
+                            <StackPanel>
+                                <TextBlock Text="TIPS" FontSize="11" FontWeight="Bold"
+                                           Foreground="#FFCC00" Margin="0,0,0,10"/>
+                                <TextBlock Text="• Stand 1.5 – 2.5 meters from the sensor"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Make sure the room is well lit"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Full body from head to feet must be visible"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Remove objects blocking the sensor"
+                                           Foreground="#BDBDBD" FontSize="13"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
+                </Border>
 
-                    <!-- Layer 6: Instruction overlay (top middle) -->
-                    <Border VerticalAlignment="Top"
-                            HorizontalAlignment="Center"
-                            Margin="0,60,0,0"
-                            Background="#D9080C14"
-                            BorderBrush="#334DD0E1"
-                            BorderThickness="1"
-                            CornerRadius="16"
-                            Padding="20,16"
+                <!-- Layer 5: Partial tracking banner -->
+                <Border x:Name="PartialBodyBanner" Background="#EEF59E0B"
+                        Padding="16,10" VerticalAlignment="Top" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="⚠  " Foreground="#1A1A2E" FontSize="16"
+                                   FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Partial tracking — step back so your full body is visible"
+                                   Foreground="#1A1A2E" FontSize="14" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- HUD: tracking status badge (top-left) -->
+                <Border Background="#BF080C14" BorderBrush="#33A5F5B2" BorderThickness="1"
+                        CornerRadius="14" Padding="10,5"
+                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,14,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="TrackingDot" Width="7" Height="7"
+                                 Fill="#69F0AE" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                        <TextBlock x:Name="TrackingStatusLabel" Text="Tracking"
+                                   FontSize="11" FontWeight="Medium" Foreground="#69F0AE"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- HUD: test name badge (top-right) -->
+                <Border Background="#BF080C14" BorderBrush="#334DD0E1" BorderThickness="1"
+                        CornerRadius="14" Padding="10,5"
+                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,50,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="TestNameLabel" Text="Shoulder Raise"
+                                   FontSize="11" Foreground="#6B7A8D"/>
+                        <TextBlock x:Name="TestNumberBadge" Text=" #1"
+                                   FontSize="11" FontWeight="SemiBold" Foreground="#E8EDF2"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Layer 6: Large countdown (centre, subtle) -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                             IsHitTestVisible="False">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="CountdownText"
+                               Text=""
+                               FontSize="120" FontWeight="Bold"
+                               Foreground="#1EFFFFFF"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="CountdownSubLabel"
+                               Text=""
+                               FontSize="11" Foreground="#1EFFFFFF"
+                               HorizontalAlignment="Center"
+                               Margin="0,-10,0,0"/>
+                </StackPanel>
 
-                            <!-- Gesture preview box with animated GIF / image -->
-                            <Border Grid.Column="0"
-                                    Width="72" Height="72"
-                                    CornerRadius="10"
-                                    Background="#1A4DD0E1"
-                                    BorderBrush="#4D4DD0E1"
-                                    BorderThickness="1">
-                                <!-- Swap Image Source for your actual GIF / animation -->
-                                <TextBlock x:Name="GestureIcon"
-                                           Text="🙌"
-                                           FontSize="32"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
-                            </Border>
-
-                            <!-- Text -->
-                            <StackPanel Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        Margin="14,0,0,0">
-                                <TextBlock Text="CURRENT INSTRUCTION"
-                                           FontSize="10"
-                                           FontWeight="Bold"
-                                           Foreground="#4DD0E1"
-                                           Margin="0,0,0,4"/>
-                                <TextBlock x:Name="InstructionLabel"
-                                           Text="Raise both arms as high as you can overhead"
-                                           FontSize="15"
-                                           FontWeight="Medium"
-                                           Foreground="#E8EDF2"
-                                           TextWrapping="Wrap"/>
-                                <TextBlock x:Name="InstructionSubLabel"
-                                           Text="Hold at your maximum range and keep still"
-                                           FontSize="12"
-                                           Foreground="#6B7A8D"
-                                           Margin="0,3,0,0"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- Layer 7: No body detected overlay -->
-                    <Border x:Name="NoBodyOverlay"
-                            Background="#D9080C14"
-                            Visibility="Collapsed">
-                        <StackPanel HorizontalAlignment="Center"
-                                    VerticalAlignment="Center">
-                            <Border Width="64" Height="64"
-                                    CornerRadius="32"
-                                    Background="#26FFB300"
-                                    BorderBrush="#66FFB300"
-                                    BorderThickness="1.5"
-                                    HorizontalAlignment="Center"
-                                    Margin="0,0,0,14">
-                                <TextBlock Text="⚠"
-                                           FontSize="28"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Foreground="#FFB300"/>
-                            </Border>
-                            <TextBlock Text="No Body Detected"
-                                       FontSize="20"
-                                       FontWeight="SemiBold"
-                                       Foreground="#E8EDF2"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,8"/>
-                            <TextBlock Text="Step in front of the Kinect so your full body is visible"
-                                       FontSize="13"
-                                       Foreground="#6B7A8D"
-                                       HorizontalAlignment="Center"
-                                       TextAlignment="Center"
-                                       TextWrapping="Wrap"
-                                       MaxWidth="320"/>
+                <!-- ═══ INSTRUCTION OVERLAY — top-centre (matches SessionView) ═══ -->
+                <Border x:Name="InstructionOverlay"
+                        Background="#E0101622"
+                        BorderBrush="#334DD0E1"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="24,14"
+                        MinWidth="320"
+                        MaxWidth="620"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,16,0,0"
+                        IsHitTestVisible="False">
+                    <StackPanel HorizontalAlignment="Center">
+                        <!-- Header row -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                            <TextBlock Text="&#xE81E;" FontFamily="Segoe MDL2 Assets"
+                                       Foreground="#64B5F6" FontSize="14"
+                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="INSTRUCTION"
+                                       FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"
+                                       Foreground="#64B5F6" VerticalAlignment="Center"/>
                         </StackPanel>
-                    </Border>
+                        <!-- Main instruction text -->
+                        <TextBlock x:Name="InstructionLabel"
+                                   Text="Raise both arms as high as you can overhead"
+                                   FontFamily="Segoe UI" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#E8EDF2" TextWrapping="Wrap"
+                                   TextAlignment="Center" HorizontalAlignment="Center"/>
+                        <!-- Sub instruction -->
+                        <TextBlock x:Name="InstructionSubLabel"
+                                   Text="Hold at your maximum range and keep still"
+                                   FontFamily="Segoe UI" FontSize="12"
+                                   Foreground="#6B7A8D" TextAlignment="Center"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
 
-                    <!-- Layer 8: Partial tracking banner -->
-                    <Border x:Name="PartialBodyBanner"
-                            VerticalAlignment="Top"
-                            Background="#EEF59E0B"
-                            Padding="14,8"
-                            Visibility="Collapsed">
-                        <TextBlock Text="⚠  Partial tracking — step back so your full body is visible"
-                                   Foreground="#1A1A2E"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Center"/>
-                    </Border>
-
-                    <!-- Layer 9: PAUSE OVERLAY -->
-                    <Border x:Name="PauseOverlay"
-                            Background="#E0080C14"
-                            Visibility="Collapsed">
-                        <!-- Blur effect approximation via nested border -->
-                        <Border.Effect>
-                            <BlurEffect Radius="0"/>
-                        </Border.Effect>
-                        <Grid HorizontalAlignment="Center"
-                              VerticalAlignment="Center">
-
-                            <!-- Pause card -->
-                            <Border Background="#F0101622"
-                                    BorderBrush="#334DD0E1"
-                                    BorderThickness="1"
-                                    CornerRadius="20"
-                                    Padding="48,40"
-                                    MinWidth="600">
-                                <StackPanel HorizontalAlignment="Center">
-
-                                    <!-- Pause icon -->
-                                    <Border Width="56" Height="56"
-                                            CornerRadius="28"
-                                            Background="#1A4DD0E1"
-                                            BorderBrush="#4D4DD0E1"
-                                            BorderThickness="1.5"
-                                            HorizontalAlignment="Center"
-                                            Margin="0,0,0,18">
-                                        <TextBlock Text="⏸"
-                                                   FontSize="22"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <TextBlock x:Name="PauseTitleText"
-                                               Text="PAUSED"
-                                               FontSize="32"
-                                               FontWeight="Bold"
-                                               Foreground="#E8EDF2"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,0,0,8"/>
-
-                                    <TextBlock x:Name="PauseDescriptionText"
-                                               Text="Your session is paused. Take a moment&#x0a;before continuing your test."
-                                               FontSize="13"
-                                               Foreground="#6B7A8D"
-                                               HorizontalAlignment="Center"
-                                               TextAlignment="Center"
-                                               LineHeight="22"
-                                               Margin="0,0,0,28"/>
-
-                                    <!-- Actions -->
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
-                                        <!-- Resume/Start Button -->
-                                        <Grid x:Name="ResumeButton" Width="160" Height="160" Margin="15,0" Cursor="Hand" Tag="Resume" MouseLeftButtonUp="ResumeButton_Click">
-                                            <Ellipse x:Name="Glow_Resume" Fill="#004DD0E1" Opacity="0"/>
-                                            <Ellipse Stroke="#4DD0E1" StrokeThickness="2" Fill="#111827"/>
-                                            <Ellipse x:Name="Progress_Resume" Stroke="#4DD0E1" StrokeThickness="4" Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1" RenderTransformOrigin="0.5,0.5">
-                                                <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
-                                            </Ellipse>
-                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <TextBlock Text="▶" FontSize="36" Foreground="#4DD0E1" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                                <TextBlock x:Name="ResumeButtonText" Text="Start Test" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Grid>
-
-                                        <!-- Redo Button -->
-                                        <Grid x:Name="RedoButton" Width="160" Height="160" Margin="15,0" Cursor="Hand" Tag="Redo" MouseLeftButtonUp="RedoButton_Click">
-                                            <Ellipse x:Name="Glow_Redo" Fill="#006B7280" Opacity="0"/>
-                                            <Ellipse Stroke="#6B7280" StrokeThickness="2" Fill="#111827"/>
-                                            <Ellipse x:Name="Progress_Redo" Stroke="#6B7280" StrokeThickness="4" Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1" RenderTransformOrigin="0.5,0.5">
-                                                <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
-                                            </Ellipse>
-                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <TextBlock Text="↺" FontSize="42" Foreground="#6B7280" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                                <TextBlock Text="Redo Test" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Grid>
-
-                                        <!-- End Session Button -->
-                                        <Grid x:Name="EndSessionButton" Width="160" Height="160" Margin="15,0" Cursor="Hand" Tag="EndSession" MouseLeftButtonUp="EndSessionButton_Click">
-                                            <Ellipse x:Name="Glow_EndSession" Fill="#00EF4444" Opacity="0"/>
-                                            <Ellipse Stroke="#EF4444" StrokeThickness="2" Fill="#111827"/>
-                                            <Ellipse x:Name="Progress_EndSession" Stroke="#EF4444" StrokeThickness="4" Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1" RenderTransformOrigin="0.5,0.5">
-                                                <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
-                                            </Ellipse>
-                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <TextBlock Text="✕" FontSize="36" Foreground="#EF4444" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                                <TextBlock Text="End Session" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-
-                                    <!-- Gesture hint -->
-                                    <Border BorderBrush="#0FFFFFFF"
-                                            BorderThickness="0,1,0,0"
-                                            Margin="0,22,0,0"
-                                            Padding="0,18,0,0">
-                                        <TextBlock Text="✕  Cross arms again to resume"
-                                                   FontSize="11"
-                                                   Foreground="#3D4A5A"
-                                                   HorizontalAlignment="Center"/>
-                                    </Border>
-
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </Border>
-
-                </Grid>
-            </Border>
-
-            <!-- ── METRICS SIDEBAR ── -->
-            <Border Grid.Column="1"
-                    Background="#0A0D18"
-                    BorderBrush="#0D4DD0E1"
-                    BorderThickness="1,0,0,0">
-                <StackPanel VerticalAlignment="Center"
-                            HorizontalAlignment="Center"
-                            Margin="0,0,0,0">
-
-                    <!-- Pause Instructions -->
-                    <Border Width="160"
-                        Height="160"
+                <!-- ═══ JOINT ANGLES PANEL — bottom-left overlay ═══ -->
+                <Border x:Name="JointAnglePanel"
                         Background="#D9080C14"
                         BorderBrush="#334DD0E1"
                         BorderThickness="1"
                         CornerRadius="16"
-                        Padding="12"
-                        HorizontalAlignment="Center"
-                        Margin="0,0,0,24">
-
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Image Source="/Assets/Icons/pause-gesture.png" 
-                                       Width="65" 
-                                       Height="65" 
-                                       Stretch="Uniform"/>
-
-                            <!-- Text Content -->
-                            <StackPanel Grid.Row="1"
-                                    Margin="0,10,0,0"
-                                    VerticalAlignment="Center">
-
-                                <TextBlock Text="⏸"
-                                       FontSize="18"
-                                       FontWeight="Bold"
-                                       Foreground="#4DD0E1"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,4"/>
-
-                                <TextBlock Text="CROSS ARMS"
-                                       FontSize="11"
-                                       FontWeight="Bold"
-                                       Foreground="#4DD0E1"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,2"/>
-
-                                <TextBlock Text="to pause"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="#E8EDF2"
-                                       HorizontalAlignment="Center"/>
-
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- Divider -->
-                    <Border Width="40" Height="1"
-                            Background="#0FFFFFFF"
-                            Margin="0,0,0,24"/>
-
-                    <!-- Current angle ball -->
-                    <Grid Width="130" Height="130" Margin="0,0,0,12">
-                        <!-- Ring drawn in code-behind on SkeletonCanvas or via adorner;
-                             here we use a simple ellipse border as placeholder -->
-                        <Ellipse Width="130" Height="130"
-                                 Stroke="#1A4DD0E1"
-                                 StrokeThickness="3"
-                                 Fill="#0A4DD0E1"/>
-
-                        <!-- Progress arc — drawn via code-behind using Path + StreamGeometry -->
-                        <Canvas x:Name="CurrentAngleArcCanvas" Width="130" Height="130"/>
-
-                        <StackPanel VerticalAlignment="Center"
-                                    HorizontalAlignment="Center">
-                            <TextBlock x:Name="AngleReadout"
-                                       Text="--"
-                                       FontSize="38"
-                                       FontWeight="Bold"
-                                       Foreground="#4DD0E1"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="degrees"
-                                       FontSize="11"
-                                       Foreground="#3D4A5A"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,-4,0,0"/>
-                            <TextBlock Text="CURRENT"
-                                       FontSize="9"
-                                       FontWeight="Bold"
-                                       Foreground="#2D6A73"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,4,0,0"/>
+                        Padding="16,14"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Margin="20,0,0,20"
+                        MinWidth="260"
+                        IsHitTestVisible="False">
+                    <StackPanel>
+                        <!-- Panel header -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="📐" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="JOINT ANGLES"
+                                       FontSize="10" FontWeight="Bold"
+                                       Foreground="#4DD0E1" VerticalAlignment="Center"/>
+                            <TextBlock Text="  vs Ideal Average"
+                                       FontSize="10" Foreground="#3D4A5A"
+                                       VerticalAlignment="Center"/>
                         </StackPanel>
-                    </Grid>
 
-                    <!-- Divider -->
-                    <Border Width="40" Height="1"
-                            Background="#0FFFFFFF"
-                            Margin="0,4,0,16"/>
+                        <!-- Column headers -->
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="JOINT" FontSize="9" FontWeight="Bold"
+                                       Foreground="#3D4A5A" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="YOURS" FontSize="9" FontWeight="Bold"
+                                       Foreground="#4DD0E1" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="IDEAL" FontSize="9" FontWeight="Bold"
+                                       Foreground="#FFB300" HorizontalAlignment="Center"/>
+                        </Grid>
 
-                    <!-- Best angle ball -->
-                    <Grid Width="130" Height="130" Margin="0,0,0,16">
-                        <Ellipse Width="130" Height="130"
-                                 Stroke="#1AFFB300"
-                                 StrokeThickness="3"
-                                 Fill="#0AFFB300"/>
+                        <!-- Divider -->
+                        <Border Height="1" Background="#0CFFFFFF" Margin="0,0,0,8"/>
 
-                        <Canvas x:Name="BestAngleArcCanvas" Width="130" Height="130"/>
+                        <!-- Joint rows — populated in code-behind via JointAngleRows ItemsControl -->
+                        <ItemsControl x:Name="JointAngleRows">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Each item is a JointAngleRowVM -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="7" Height="7"
+                                                     Fill="{Binding DotColor}"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Label}"
+                                                       FontSize="11" Foreground="#9E9E9E"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding UserAngle}"
+                                                   FontSize="13" FontWeight="Bold"
+                                                   Foreground="{Binding AngleColor}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding IdealAngle}"
+                                                   FontSize="12"
+                                                   Foreground="#7A6200"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-                        <StackPanel VerticalAlignment="Center"
-                                    HorizontalAlignment="Center">
+                        <!-- Divider -->
+                        <Border Height="1" Background="#0CFFFFFF" Margin="0,6,0,8"/>
+
+                        <!-- Best angle row -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="BEST SO FAR" FontSize="9" FontWeight="Bold"
+                                       Foreground="#3D4A5A" VerticalAlignment="Center"/>
                             <TextBlock x:Name="BestAngleReadout"
-                                       Text="--"
-                                       FontSize="38"
-                                       FontWeight="Bold"
+                                       Grid.Column="1"
+                                       Text="--°"
+                                       FontSize="14" FontWeight="Bold"
                                        Foreground="#FFB300"
                                        HorizontalAlignment="Center"/>
-                            <TextBlock Text="degrees"
-                                       FontSize="11"
-                                       Foreground="#3D4A5A"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,-4,0,0"/>
-                            <TextBlock Text="BEST"
-                                       FontSize="9"
-                                       FontWeight="Bold"
-                                       Foreground="#7A5C00"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,4,0,0"/>
-                        </StackPanel>
+                            <TextBlock Grid.Column="2" Text="" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══ PAUSE OVERLAY ═══ -->
+                <Border x:Name="PauseOverlay"
+                        Background="#E0080C14"
+                        Visibility="Collapsed">
+                    <Border.Effect>
+                        <BlurEffect Radius="0"/>
+                    </Border.Effect>
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Canvas x:Name="PauseOverlayCursorCanvas"
+                                IsHitTestVisible="False"
+                                Panel.ZIndex="9999"/>
+                        <Border Background="#F0101622"
+                                BorderBrush="#334DD0E1"
+                                BorderThickness="1"
+                                CornerRadius="20"
+                                Padding="48,40"
+                                MinWidth="600">
+                            <StackPanel HorizontalAlignment="Center">
+                                <!-- Pause icon -->
+                                <Border Width="56" Height="56"
+                                        CornerRadius="28"
+                                        Background="#1A4DD0E1"
+                                        BorderBrush="#4D4DD0E1"
+                                        BorderThickness="1.5"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,0,0,18">
+                                    <TextBlock x:Name="PauseIcon" Text="⏸" FontSize="22"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <TextBlock x:Name="PauseTitleText"
+                                           Text="PAUSED"
+                                           FontSize="32" FontWeight="Bold"
+                                           Foreground="#E8EDF2"
+                                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="PauseDescriptionText"
+                                           Text="Your test is paused. Take a moment before continuing."
+                                           FontSize="13" Foreground="#6B7A8D"
+                                           HorizontalAlignment="Center" TextAlignment="Center"
+                                           LineHeight="22" Margin="0,0,0,28"/>
+
+                                <!-- Circular action buttons -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
+                                    <!-- Resume / Start -->
+                                    <Grid x:Name="ResumeButton" Width="160" Height="160" Margin="15,0"
+                                          Cursor="Hand" MouseLeftButtonUp="ResumeButton_Click">
+                                        <Ellipse x:Name="Glow_Resume" Fill="#004DD0E1" Opacity="0"/>
+                                        <Ellipse Stroke="#4DD0E1" StrokeThickness="2" Fill="#111827"/>
+                                        <Ellipse x:Name="Progress_Resume" Stroke="#4DD0E1" StrokeThickness="4"
+                                                 Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1"
+                                                 RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="▶" FontSize="36" Foreground="#4DD0E1"
+                                                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock x:Name="ResumeButtonText" Text="Start Test"
+                                                       FontSize="16" FontWeight="SemiBold"
+                                                       Foreground="White" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Redo -->
+                                    <Grid x:Name="RedoButton" Width="160" Height="160" Margin="15,0"
+                                          Cursor="Hand" MouseLeftButtonUp="RedoButton_Click">
+                                        <Ellipse x:Name="Glow_Redo" Fill="#006B7280" Opacity="0"/>
+                                        <Ellipse Stroke="#6B7280" StrokeThickness="2" Fill="#111827"/>
+                                        <Ellipse x:Name="Progress_Redo" Stroke="#6B7280" StrokeThickness="4"
+                                                 Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1"
+                                                 RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="↺" FontSize="42" Foreground="#6B7280"
+                                                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock Text="Redo Test" FontSize="16" FontWeight="SemiBold"
+                                                       Foreground="White" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- End Session -->
+                                    <Grid x:Name="EndSessionButton" Width="160" Height="160" Margin="15,0"
+                                          Cursor="Hand" MouseLeftButtonUp="EndSessionButton_Click">
+                                        <Ellipse x:Name="Glow_EndSession" Fill="#00EF4444" Opacity="0"/>
+                                        <Ellipse Stroke="#EF4444" StrokeThickness="2" Fill="#111827"/>
+                                        <Ellipse x:Name="Progress_EndSession" Stroke="#EF4444" StrokeThickness="4"
+                                                 Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1"
+                                                 RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="✕" FontSize="36" Foreground="#EF4444"
+                                                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock Text="End Session" FontSize="16" FontWeight="SemiBold"
+                                                       Foreground="White" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- Gesture hint -->
+                                <Border BorderBrush="#0FFFFFFF" BorderThickness="0,1,0,0"
+                                        Margin="0,22,0,0" Padding="0,18,0,0">
+                                    <TextBlock Text="✕  Raise hands again to resume"
+                                               FontSize="11" Foreground="#3D4A5A"
+                                               HorizontalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </Grid>
+                </Border>
 
-                    <!-- Divider -->
-                    <Border Width="40" Height="1"
-                            Background="#0FFFFFFF"
-                            Margin="0,0,0,16"/>
-
-                    <!-- Next test button removed as it will auto start and skip -->
-
-                </StackPanel>
-            </Border>
-
-        </Grid>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
