@@ -68,6 +68,7 @@ namespace capstoneOneShot.Models
                 {
                     Name          = "Mountain Pose",
                     Description   = "Stand tall with feet together, arms at your sides, and spine straight.",
+                    BriefInfo     = "A foundational standing pose that builds awareness, balance, and upright posture.",
                     Difficulty    = DifficultyLevel.Beginner,
                     HoldSeconds   = 120,
                     ImageFileName = "mountain-pose.png",

@@ -25,6 +25,8 @@ namespace capstoneOneShot.Models
     {
         public string Name { get; set; }
         public string Description { get; set; }
+        /// <summary>Short tagline displayed prominently on the Pose Detail screen.</summary>
+        public string BriefInfo { get; set; }
         public DifficultyLevel Difficulty { get; set; }
         public int HoldSeconds { get; set; }
         public string ImageFileName { get; set; }
