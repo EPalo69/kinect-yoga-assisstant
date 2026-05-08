@@ -45,27 +45,34 @@ namespace capstoneOneShot.Views
 
     // ── Static ideal human ROM averages (degrees) ───────────────────────────
     // Sources: AAOS / clinical reference ranges
+    // Note: BalanceHipDrop is in Kinect Y-units (not degrees); ideal ≈ 0 drop.
     internal static class IdealAngles
     {
-        // Displayed angles are the *joint angle* as calculated by JointAngleCalculator
-        // (angle at the joint between the two segments).
-        // Shoulder raise (arm-overhead): ~170°  (fully raised = near 180)
-        // Lateral raise:                 ~80-90°
-        // Knee bend (squat):             ~50-90° at peak flex
-        // Hip hinge (forward fold):      ~45-60° (angle at hip decreases)
         public static readonly Dictionary<string, (double Ideal, string Label)> Map =
             new Dictionary<string, (double, string)>
             {
-                ["LeftShoulder"]  = (170, "L Shoulder"),
-                ["RightShoulder"] = (170, "R Shoulder"),
-                ["LeftElbow"]     = (170, "L Elbow"),
-                ["RightElbow"]    = (170, "R Elbow"),
-                ["LeftKnee"]      = (60,  "L Knee"),
-                ["RightKnee"]     = (60,  "R Knee"),
-                ["LeftHip"]       = (60,  "L Hip"),
-                ["RightHip"]      = (60,  "R Hip"),
-                ["LeftWrist"]     = (170, "L Wrist"),
-                ["RightWrist"]    = (170, "R Wrist"),
+                // ── Test 1: Overhead Star Reach ──────────────────────────────
+                ["OverheadShoulder"] = (170, "Shoulder (L)"),
+                ["OverheadElbow"]    = (170, "Elbow (L)"),
+                ["OverheadWrist"]    = (170, "Wrist (L)"),
+                ["SpineDeviation"]   = (0,   "Spine Align"),
+
+                // ── Test 2: Lateral Arm Raise ────────────────────────────────
+                ["LateralShoulder"]  = (90,  "Shoulder (L)"),
+                ["LateralShoulderR"] = (90,  "Shoulder (R)"),
+                ["LateralElbow"]     = (170, "Elbow (L)"),
+                ["LateralElbowR"]    = (170, "Elbow (R)"),
+
+                // ── Test 3: Wide Squat ───────────────────────────────────────
+                ["SquatKnee"]        = (60,  "Knee (L)"),
+                ["SquatKneeR"]       = (60,  "Knee (R)"),
+                ["SquatHip"]         = (70,  "Hip (L)"),
+                ["SquatHipR"]        = (70,  "Hip (R)"),
+
+                // ── Test 4: Single-Leg Balance ───────────────────────────────
+                ["BalanceHipDrop"]   = (0,   "Hip Drop"),
+                ["BalanceKnee"]      = (170, "Stand Knee"),
+                ["BalanceAnkle"]     = (90,  "Ankle Stab."),
             };
     }
 
@@ -75,17 +82,16 @@ namespace capstoneOneShot.Views
         public static readonly Dictionary<string, string[]> ByTestName =
             new Dictionary<string, string[]>
             {
-                ["Shoulder Raise"]   = new[] { "LeftShoulder", "RightShoulder", "LeftElbow", "RightElbow" },
-                ["Knee Bend"]        = new[] { "LeftKnee", "RightKnee", "LeftHip", "RightHip" },
-                ["Hip Hinge"]        = new[] { "LeftHip", "RightHip", "LeftKnee", "RightKnee" },
-                ["Lateral Arm Raise"]= new[] { "LeftShoulder", "RightShoulder", "LeftElbow", "RightElbow" },
+                ["Overhead Star Reach"] = new[] { "OverheadShoulder", "OverheadElbow",   "OverheadWrist"  },
+                ["Lateral Arm Raise"]   = new[] { "LateralShoulder",  "LateralShoulderR", "LateralElbow", "LateralElbowR" },
+                ["Wide Squat"]          = new[] { "SquatKnee",        "SquatKneeR",      "SquatHip",     "SquatHipR"     },
+                ["Single-Leg Balance"]  = new[] { "BalanceHipDrop",   "BalanceKnee",     "BalanceAnkle"  },
             };
 
         public static string[] GetFor(string testName)
         {
             if (ByTestName.TryGetValue(testName, out var keys)) return keys;
-            // Fallback: show all
-            return new[] { "LeftShoulder", "RightShoulder", "LeftKnee", "RightKnee", "LeftHip", "RightHip" };
+            return new[] { "OverheadShoulder", "LateralShoulder", "SquatKnee", "BalanceHipDrop" };
         }
     }
 
@@ -132,6 +138,7 @@ namespace capstoneOneShot.Views
             Panel.SetZIndex(PauseGestureCanvas, 9999);
 
             LoadCurrentTest();
+            Loaded += (s, e) => InitStatusPills();
         }
 
         // ── Load current test ────────────────────────────────────────────────
@@ -221,17 +228,26 @@ namespace capstoneOneShot.Views
                         NoBodyOverlay.Visibility    = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
                         SetTrackingStatus("Fully Tracked", "#4CAF50");
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                        PillBodyLabel.Text = "Body Detected";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
                         break;
                     case BodyDetectionStatus.PartialDetect:
                         NoBodyOverlay.Visibility    = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Visible;
                         SetTrackingStatus("Partial Tracking", "#F59E0B");
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                        PillBodyLabel.Text = "Partial Body";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
                         break;
                     case BodyDetectionStatus.NotDetected:
                         NoBodyOverlay.Visibility    = Visibility.Visible;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
                         SetTrackingStatus("Not Detected", "#EF4444");
                         ClearAngleReadouts();
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                        PillBodyLabel.Text = "No Body Detected";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
                         break;
                 }
                 _currentBodyStatus = status;
@@ -285,23 +301,31 @@ namespace capstoneOneShot.Views
 
             angles.TryGetValue(test.JointToMeasure, out double primaryAngle);
 
-            // Also compute best for display
-            double best = primaryAngle;
-            if (_lastAngles.TryGetValue(test.JointToMeasure + "_best", out double prevBest))
+            // Compute best for display — persist across frames via _bestByKey
+            string bestKey = test.JointToMeasure + "_best";
+            double best;
+            if (_lastAngles.TryGetValue(bestKey, out double prevBest))
                 best = test.TrackMinimum
                     ? Math.Min(prevBest, primaryAngle)
                     : Math.Max(prevBest, primaryAngle);
+            else
+                best = primaryAngle;
 
-            _lastAngles[test.JointToMeasure + "_best"] = best;
-            _lastAngles = angles; // keep for HUD
+            // Store the best into the new frame dict so it persists across frames
+            _lastAngles = angles;
+            _lastAngles[bestKey] = best;
+
+            bool isBalanceTest = test.JointToMeasure == "BalanceHipDrop";
 
             Dispatcher.Invoke(() =>
             {
                 // Update joint rows
                 UpdateJointRows(angles, test);
 
-                // Update best readout (shown for the primary joint)
-                BestAngleReadout.Text = best.ToString("F1") + "°";
+                // Update best readout — units depend on test type
+                BestAngleReadout.Text = isBalanceTest
+                    ? best.ToString("F3") + " m"
+                    : best.ToString("F1") + "°";
 
                 DrawSkeleton(skeleton);
             });
@@ -311,34 +335,40 @@ namespace capstoneOneShot.Views
         {
             if (_angleRows == null) return;
 
+            bool isBalanceTest = test.JointToMeasure == "BalanceHipDrop";
+
             foreach (var row in _angleRows)
             {
                 if (!angles.TryGetValue(row.AngleKey, out double angle))
                 {
-                    row.UserAngle  = "--°";
+                    row.UserAngle  = "--";
                     row.AngleColor = "#4DD0E1";
                     row.DotColor   = "#3D4A5A";
                     continue;
                 }
 
+                bool isPrimary = row.AngleKey == test.JointToMeasure;
+                row.DotColor = isPrimary ? "#4DD0E1" : "#3D4A5A";
+
+                // ── BalanceHipDrop: display as Y-units, not degrees ──
+                if (row.AngleKey == "BalanceHipDrop")
+                {
+                    row.UserAngle = angle.ToString("F3") + " m";
+                    if (angle <= 0.025)      row.AngleColor = "#4CAF50";  // green: stable
+                    else if (angle <= 0.05)  row.AngleColor = "#FFB300";  // amber: mild sway
+                    else                     row.AngleColor = "#EF4444";  // red: significant drop
+                    continue;
+                }
+
+                // ── Standard joint angle ──
                 row.UserAngle = angle.ToString("F1") + "°";
 
-                // Colour the row: compare to ideal
                 if (IdealAngles.Map.TryGetValue(row.AngleKey, out var info))
                 {
-                    double diff   = Math.Abs(angle - info.Ideal);
-                    bool isPrimary = row.AngleKey == test.JointToMeasure;
-
-                    // Highlight primary joint brighter
-                    row.DotColor = isPrimary ? "#4DD0E1" : "#3D4A5A";
-
-                    // Colour-code closeness to ideal
-                    if (diff <= 15)
-                        row.AngleColor = "#4CAF50";   // green: close to ideal
-                    else if (diff <= 35)
-                        row.AngleColor = "#FFB300";   // amber: moderate
-                    else
-                        row.AngleColor = "#4DD0E1";   // cyan: still recording
+                    double diff = Math.Abs(angle - info.Ideal);
+                    if (diff <= 15)       row.AngleColor = "#4CAF50";  // close to ideal
+                    else if (diff <= 35)  row.AngleColor = "#FFB300";  // moderate
+                    else                  row.AngleColor = "#4DD0E1";  // still recording
                 }
             }
         }
@@ -430,21 +460,72 @@ namespace capstoneOneShot.Views
         }
 
         // ── Angle dictionary ─────────────────────────────────────────────────
+        // Builds a unified key→value map covering all 4 ROM tests.
+        // BalanceHipDrop is the |Y| difference between hips (not a true angle)
+        // stored under the same key so RecordFrame can track it.
         private Dictionary<string, double> BuildAngleDictionary(Skeleton skeleton)
         {
             var j = skeleton.Joints;
+
+            // Shoulder-center → shoulder → elbow (flexion / abduction)
+            double lShoulderAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.ShoulderCenter].Position, j[JointType.ShoulderLeft].Position,  j[JointType.ElbowLeft].Position);
+            double rShoulderAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.ShoulderCenter].Position, j[JointType.ShoulderRight].Position, j[JointType.ElbowRight].Position);
+
+            // Elbow angles
+            double lElbowAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.ShoulderLeft].Position,  j[JointType.ElbowLeft].Position,  j[JointType.WristLeft].Position);
+            double rElbowAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.ShoulderRight].Position, j[JointType.ElbowRight].Position, j[JointType.WristRight].Position);
+
+            // Wrist angles
+            double lWristAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.ElbowLeft].Position,  j[JointType.WristLeft].Position,  j[JointType.HandLeft].Position);
+
+            // Knee angles
+            double lKneeAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.HipLeft].Position,  j[JointType.KneeLeft].Position,  j[JointType.AnkleLeft].Position);
+            double rKneeAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.HipRight].Position, j[JointType.KneeRight].Position, j[JointType.AnkleRight].Position);
+
+            // Hip angles (trunk → hip → knee)
+            double lHipAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.ShoulderCenter].Position, j[JointType.HipLeft].Position,  j[JointType.KneeLeft].Position);
+            double rHipAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.ShoulderCenter].Position, j[JointType.HipRight].Position, j[JointType.KneeRight].Position);
+
+            // Ankle stability proxy (HipCenter → Knee → Ankle)
+            double rAnkleAngle = JointAngleCalculator.CalculateAngle(
+                j[JointType.KneeRight].Position, j[JointType.AnkleRight].Position, j[JointType.FootRight].Position);
+
+            // Balance: hip drop = |Y difference between hips| (Kinect Y units)
+            double hipDrop = Math.Abs(
+                j[JointType.HipLeft].Position.Y - j[JointType.HipRight].Position.Y);
+
             return new Dictionary<string, double>
             {
-                ["LeftShoulder"]  = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderCenter].Position, j[JointType.ShoulderLeft].Position,  j[JointType.ElbowLeft].Position),
-                ["RightShoulder"] = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderCenter].Position, j[JointType.ShoulderRight].Position, j[JointType.ElbowRight].Position),
-                ["LeftElbow"]     = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderLeft].Position,   j[JointType.ElbowLeft].Position,     j[JointType.WristLeft].Position),
-                ["RightElbow"]    = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderRight].Position,  j[JointType.ElbowRight].Position,    j[JointType.WristRight].Position),
-                ["LeftKnee"]      = JointAngleCalculator.CalculateAngle(j[JointType.HipLeft].Position,        j[JointType.KneeLeft].Position,      j[JointType.AnkleLeft].Position),
-                ["RightKnee"]     = JointAngleCalculator.CalculateAngle(j[JointType.HipRight].Position,       j[JointType.KneeRight].Position,     j[JointType.AnkleRight].Position),
-                ["LeftHip"]       = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderCenter].Position, j[JointType.HipLeft].Position,       j[JointType.KneeLeft].Position),
-                ["RightHip"]      = JointAngleCalculator.CalculateAngle(j[JointType.ShoulderCenter].Position, j[JointType.HipRight].Position,      j[JointType.KneeRight].Position),
-                ["LeftWrist"]     = JointAngleCalculator.CalculateAngle(j[JointType.ElbowLeft].Position,      j[JointType.WristLeft].Position,     j[JointType.HandLeft].Position),
-                ["RightWrist"]    = JointAngleCalculator.CalculateAngle(j[JointType.ElbowRight].Position,     j[JointType.WristRight].Position,    j[JointType.HandRight].Position),
+                // ── Overhead Star Reach keys ──
+                ["OverheadShoulder"] = lShoulderAngle,
+                ["OverheadElbow"]    = lElbowAngle,
+                ["OverheadWrist"]    = lWristAngle,
+
+                // ── Lateral Arm Raise keys ──
+                ["LateralShoulder"]  = lShoulderAngle,
+                ["LateralShoulderR"] = rShoulderAngle,
+                ["LateralElbow"]     = lElbowAngle,
+                ["LateralElbowR"]    = rElbowAngle,
+
+                // ── Wide Squat keys ──
+                ["SquatKnee"]        = lKneeAngle,
+                ["SquatKneeR"]       = rKneeAngle,
+                ["SquatHip"]         = lHipAngle,
+                ["SquatHipR"]        = rHipAngle,
+
+                // ── Single-Leg Balance keys ──
+                ["BalanceHipDrop"]   = hipDrop,
+                ["BalanceKnee"]      = rKneeAngle,
+                ["BalanceAnkle"]     = rAnkleAngle,
             };
         }
 
@@ -654,6 +735,35 @@ namespace capstoneOneShot.Views
         {
             Cleanup();
             base.OnClosed(e);
+        }
+
+        // ── Status pill helpers ───────────────────────────────────────────────
+        private void InitStatusPills()
+        {
+            bool kinectOk = _kinectManager.IsConnected;
+            PillKinectDot.Fill   = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(239,68,68));
+            PillKinectLabel.Text = kinectOk ? "Kinect Connected" : "Kinect Not Connected";
+            PillKinectLabel.Foreground = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(156,163,175));
+
+            // ROM starts as "Not Loaded" on this screen — it gets set to loaded
+            // only after this test finishes and the profile is saved.
+            UpdateROMPill();
+        }
+
+        private void UpdateROMPill()
+        {
+            if (UserSession.HasCompletedROM)
+            {
+                PillROMDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                PillROMLabel.Text = "ROM Loaded";
+                PillROMLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+            }
+            else
+            {
+                PillROMDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                PillROMLabel.Text = "ROM Not Loaded";
+                PillROMLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+            }
         }
     }
 }

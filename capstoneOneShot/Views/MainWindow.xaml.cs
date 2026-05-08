@@ -186,7 +186,7 @@ namespace capstoneOneShot.Views
 
             _pointerService.Start();
 
-            //_avatarService = new AvatarService(AvatarViewport);
+            UpdateROMPill();
         }
 
         // ── Body status pill ─────────────────────────────────────────────
@@ -211,10 +211,29 @@ namespace capstoneOneShot.Views
                         BodyStatusDot.Fill = new SolidColorBrush(Color.FromRgb(239, 68, 68));
                         BodyStatusLabel.Text = "No Body Detected";
                         BodyStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
-                        //_avatarService?.Clear();
                         break;
                 }
+
+                // Refresh ROM pill (user may have just returned from ROM test)
+                UpdateROMPill();
             });
+        }
+
+        // ── ROM pill ───────────────────────────────────────────────────
+        private void UpdateROMPill()
+        {
+            if (UserSession.HasCompletedROM)
+            {
+                ROMStatusDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                ROMStatusLabel.Text = "ROM Loaded";
+                ROMStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+            }
+            else
+            {
+                ROMStatusDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                ROMStatusLabel.Text = "ROM Not Loaded";
+                ROMStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+            }
         }
 
         // ── Skeleton frame ───────────────────────────────────────────────

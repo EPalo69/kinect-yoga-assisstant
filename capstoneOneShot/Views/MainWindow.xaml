@@ -41,11 +41,19 @@
                                        Foreground="#9CA3AF" FontSize="12"/>
                         </StackPanel>
                     </Border>
-                    <Border Background="#111827" CornerRadius="20" Padding="16,6">
+                    <Border Background="#111827" CornerRadius="20" Padding="16,6" Margin="0,0,10,0">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse x:Name="BodyStatusDot" Width="8" Height="8"
                                      Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock x:Name="BodyStatusLabel" Text="No Body Detected"
+                                       Foreground="#9CA3AF" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#111827" CornerRadius="20" Padding="16,6">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="ROMStatusDot" Width="8" Height="8"
+                                     Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="ROMStatusLabel" Text="ROM Not Loaded"
                                        Foreground="#9CA3AF" FontSize="12"/>
                         </StackPanel>
                     </Border>

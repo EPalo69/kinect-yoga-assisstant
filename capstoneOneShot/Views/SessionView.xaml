@@ -39,11 +39,45 @@
                 BorderBrush="#194DD0E1"
                 BorderThickness="0,0,0,1">
             <Grid Margin="20,0">
-                <TextBlock Text="YOGA SESSION"
-                           FontSize="16"
-                           FontWeight="Bold"
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="YOGA SESSION"
+                           FontSize="16" FontWeight="Bold"
                            Foreground="#4DD0E1"
                            VerticalAlignment="Center"/>
+
+                <!-- Status pills (right side) -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#111827" CornerRadius="20" Padding="12,4" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="PillKinectDot" Width="7" Height="7" Fill="#EF4444"
+                                     VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="PillKinectLabel" Text="Kinect Not Connected"
+                                       Foreground="#9CA3AF" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#111827" CornerRadius="20" Padding="12,4" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="PillBodyDot" Width="7" Height="7" Fill="#EF4444"
+                                     VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="PillBodyLabel" Text="No Body Detected"
+                                       Foreground="#9CA3AF" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#111827" CornerRadius="20" Padding="12,4">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="PillROMDot" Width="7" Height="7" Fill="#EF4444"
+                                     VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="PillROMLabel" Text="ROM Not Loaded"
+                                       Foreground="#9CA3AF" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 

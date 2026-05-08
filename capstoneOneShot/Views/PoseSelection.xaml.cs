@@ -47,9 +47,11 @@ namespace capstoneOneShot.Views
                 _pointerService.RegisterButton(Btn_Back, Math.PI * 100, () => BackButton_Click(null, null));
 
                 _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
+                _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
 
                 ShowPoses(_allPoses);
                 ShowROMBanner();
+                InitStatusPills();
                 _pointerService.BringCursorToFront();
             };
         }
@@ -163,8 +165,63 @@ namespace capstoneOneShot.Views
         protected override void OnClosed(EventArgs e)
         {
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
+            _kinectManager.BodyStatusChanged  -= OnBodyStatusChanged;
             _pointerService?.Stop();
             base.OnClosed(e);
+        }
+
+        // ── Status pills ──────────────────────────────────────────────────
+        private void InitStatusPills()
+        {
+            // Kinect pill — check whether hardware was actually found and started
+            bool kinectOk = _kinectManager.IsConnected;
+            PillKinectDot.Fill   = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(239,68,68));
+            PillKinectLabel.Text = kinectOk ? "Kinect Connected" : "Kinect Not Connected";
+            PillKinectLabel.Foreground = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(156,163,175));
+
+            // ROM pill
+            UpdateROMPill();
+        }
+
+        private void OnBodyStatusChanged(BodyDetectionStatus status)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                switch (status)
+                {
+                    case BodyDetectionStatus.Detected:
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                        PillBodyLabel.Text = "Body Detected";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                        break;
+                    case BodyDetectionStatus.PartialDetect:
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                        PillBodyLabel.Text = "Partial Body";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                        break;
+                    case BodyDetectionStatus.NotDetected:
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                        PillBodyLabel.Text = "No Body Detected";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+                        break;
+                }
+            });
+        }
+
+        private void UpdateROMPill()
+        {
+            if (UserSession.HasCompletedROM)
+            {
+                PillROMDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                PillROMLabel.Text = "ROM Loaded";
+                PillROMLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+            }
+            else
+            {
+                PillROMDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                PillROMLabel.Text = "ROM Not Loaded";
+                PillROMLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+            }
         }
     }
 }

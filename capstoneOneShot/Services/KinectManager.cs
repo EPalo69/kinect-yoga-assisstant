@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -18,6 +18,9 @@ namespace capstoneOneShot.Services
     {
         private KinectSensor _sensor;
         public KinectSensor Sensor => _sensor;
+
+        /// <summary>True when real Kinect hardware was found and successfully started.</summary>
+        public bool IsConnected => _sensor != null && _sensor.IsRunning;
 
         // Skeleton event — fires with the first fully tracked skeleton
         public event Action<Skeleton[]> SkeletonFrameReady;

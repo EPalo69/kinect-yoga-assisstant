@@ -87,14 +87,17 @@ namespace capstoneOneShot.Views
 
         private void SetupKinect()
         {
-            _kinectManager.ColorFrameReady += OnColorFrameReady;
+            _kinectManager.ColorFrameReady   += OnColorFrameReady;
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
-            _kinectManager.BodyStatusChanged += OnBodyStatusChanged;
+            _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
 
             _pauseService = new PauseGestureService(_kinectManager);
             _pauseService.PauseDetected += OnPauseTriggered;
             _pauseService.Enable(PauseGestureCanvas);
             Panel.SetZIndex(PauseGestureCanvas, 9999);
+
+            // Initialize status pills
+            InitStatusPills();
         }
         private void UnhookKinect()
         {
@@ -279,22 +282,57 @@ namespace capstoneOneShot.Views
                 switch (status)
                 {
                     case BodyDetectionStatus.Detected:
-                        NoBodyOverlay.Visibility = Visibility.Collapsed;
+                        NoBodyOverlay.Visibility     = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                        PillBodyLabel.Text = "Body Detected";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
                         break;
                     case BodyDetectionStatus.PartialDetect:
-                        NoBodyOverlay.Visibility = Visibility.Collapsed;
+                        NoBodyOverlay.Visibility     = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Visible;
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                        PillBodyLabel.Text = "Partial Body";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
                         break;
                     case BodyDetectionStatus.NotDetected:
-                        NoBodyOverlay.Visibility = Visibility.Visible;
+                        NoBodyOverlay.Visibility     = Visibility.Visible;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
-                        //ScoreLabel.Text = "0%";
-                        FeedbackList.ItemsSource = null;
-                        AllGoodLabel.Visibility = Visibility.Collapsed;
+                        FeedbackList.ItemsSource     = null;
+                        AllGoodLabel.Visibility      = Visibility.Collapsed;
+                        PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                        PillBodyLabel.Text = "No Body Detected";
+                        PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
                         break;
                 }
             });
+        }
+
+        // ── Status pill helpers ────────────────────────────────────────────────────
+        private void InitStatusPills()
+        {
+            bool kinectOk = _kinectManager.IsConnected;
+            PillKinectDot.Fill   = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(239,68,68));
+            PillKinectLabel.Text = kinectOk ? "Kinect Connected" : "Kinect Not Connected";
+            PillKinectLabel.Foreground = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(156,163,175));
+
+            UpdateROMPill();
+        }
+
+        private void UpdateROMPill()
+        {
+            if (UserSession.HasCompletedROM)
+            {
+                PillROMDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                PillROMLabel.Text = "ROM Loaded";
+                PillROMLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+            }
+            else
+            {
+                PillROMDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                PillROMLabel.Text = "ROM Not Loaded";
+                PillROMLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+            }
         }
 
         private void OnSkeletonFrameReady(Skeleton[] skeletons)

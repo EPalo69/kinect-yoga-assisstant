@@ -25,15 +25,50 @@
         </Style>
     </Window.Resources>
 
-    <!-- Root grid: top content + bottom footer -->
+    <!-- Root grid: status bar + top content + bottom footer -->
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>  <!-- Status bar -->
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- ── Status pill bar ── -->
+        <Border Grid.Row="0"
+                Background="#0A0F1E"
+                BorderBrush="#194DD0E1"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        VerticalAlignment="Center" Margin="0,0,20,0">
+                <Border Background="#111827" CornerRadius="20" Padding="12,4" Margin="0,0,6,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="PillKinectDot" Width="7" Height="7" Fill="#EF4444"
+                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="PillKinectLabel" Text="Kinect Not Connected"
+                                   Foreground="#9CA3AF" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#111827" CornerRadius="20" Padding="12,4" Margin="0,0,6,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="PillBodyDot" Width="7" Height="7" Fill="#EF4444"
+                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="PillBodyLabel" Text="No Body Detected"
+                                   Foreground="#9CA3AF" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#111827" CornerRadius="20" Padding="12,4">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="PillROMDot" Width="7" Height="7" Fill="#EF4444"
+                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="PillROMLabel" Text="ROM Not Loaded"
+                                   Foreground="#9CA3AF" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
         <!-- ── Main content row ── -->
-        <Grid Grid.Row="0" Margin="40,36,40,0">
+        <Grid Grid.Row="1" Margin="40,36,40,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="5*"/>  <!-- Left: image panel -->
                 <ColumnDefinition Width="32"/>  <!-- Gutter -->
@@ -288,13 +323,13 @@
         </Grid><!-- end main content grid -->
 
         <!-- ── Skeleton / Pointer overlays (full-window, above all content) ── -->
-        <Canvas x:Name="SkeletonCanvas" Grid.Row="0" Grid.RowSpan="2"
+        <Canvas x:Name="SkeletonCanvas" Grid.Row="0" Grid.RowSpan="3"
                 Panel.ZIndex="10" IsHitTestVisible="False"/>
-        <Canvas x:Name="MenuCanvas" Grid.Row="0" Grid.RowSpan="2"
+        <Canvas x:Name="MenuCanvas" Grid.Row="0" Grid.RowSpan="3"
                 Panel.ZIndex="20" IsHitTestVisible="False"/>
 
         <!-- ── Footer hint ── -->
-        <TextBlock Grid.Row="1"
+        <TextBlock Grid.Row="2"
                    Text="Auto-proceeds in 8s  •  Hover over Proceed to speed up"
                    Foreground="#2D3748" FontSize="12"
                    HorizontalAlignment="Center"

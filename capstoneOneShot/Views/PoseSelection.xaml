@@ -59,9 +59,35 @@
                     <TextBlock Text="Choose a pose to practice"
                                FontSize="14" Foreground="#6B7280"
                                HorizontalAlignment="Center" Margin="0,6,0,0"/>
+
+                    <!-- Status pills -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
+                        <Border Background="#111827" CornerRadius="20" Padding="16,6" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse x:Name="PillKinectDot" Width="8" Height="8" Fill="#EF4444"
+                                         VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="PillKinectLabel" Text="Kinect Not Connected"
+                                           Foreground="#9CA3AF" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#111827" CornerRadius="20" Padding="16,6" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse x:Name="PillBodyDot" Width="8" Height="8" Fill="#EF4444"
+                                         VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="PillBodyLabel" Text="No Body Detected"
+                                           Foreground="#9CA3AF" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#111827" CornerRadius="20" Padding="16,6">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse x:Name="PillROMDot" Width="8" Height="8" Fill="#EF4444"
+                                         VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="PillROMLabel" Text="ROM Not Loaded"
+                                           Foreground="#9CA3AF" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
-
-
             </Grid>
         </Border>
 

@@ -1,4 +1,4 @@
-﻿using capstoneOneShot.Models;
+using capstoneOneShot.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,19 +32,25 @@ namespace capstoneOneShot.Services
 
         public UserROMProfile BuildProfile(DifficultyLevel difficulty)
         {
-            double shoulder = 0, knee = 180, hip = 180, lateral = 0;
+            // Test 1 — Overhead Star Reach: primary = LeftShoulder (shoulder flexion)
+            _romResults.TryGetValue("OverheadShoulder", out double overheadShoulder);
 
-            if (_romResults.TryGetValue("LeftShoulder", out double ls)) shoulder = ls;
-            if (_romResults.TryGetValue("LeftKnee", out double lk)) knee = lk;
-            if (_romResults.TryGetValue("LeftHip", out double lh)) hip = lh;
-            if (_romResults.TryGetValue("RightShoulder", out double rs)) lateral = rs;
+            // Test 2 — Lateral Arm Raise: primary = LeftShoulder abduction
+            _romResults.TryGetValue("LateralShoulder", out double lateralShoulder);
+
+            // Test 3 — Wide Squat: primary = LeftKnee (knee flexion, track minimum)
+            double kneeFlexion = 180;
+            if (_romResults.TryGetValue("SquatKnee", out double sk)) kneeFlexion = sk;
+
+            // Test 4 — Single-Leg Balance: primary = HipCenter drop (track minimum Y diff)
+            _romResults.TryGetValue("BalanceHipDrop", out double hipDrop);
 
             return new UserROMProfile
             {
-                ShoulderFlexion = shoulder,
-                KneeFlexion = knee,
-                HipFlexion = hip,
-                LateralShoulder = lateral,
+                ShoulderFlexion  = overheadShoulder,
+                LateralShoulder  = lateralShoulder,
+                KneeFlexion      = kneeFlexion,
+                HipFlexion       = hipDrop,          // repurposed: hip drop during balance
                 AssignedDifficulty = difficulty,
                 IsComplete = true
             };
@@ -57,33 +63,52 @@ namespace capstoneOneShot.Services
         {
             return new List<ROMTest>
             {
+                // ── Test 1: Overhead Star Reach ─────────────────────────────
+                // Arms neutral → fully overhead, feet slightly apart.
+                // Primary metric: shoulder flexion (max angle).
                 new ROMTest
                 {
-                    Name        = "Shoulder Raise",
-                    Instruction = "Slowly raise both arms as high as you can overhead and hold.",
-                    JointToMeasure = "LeftShoulder",
-                    DurationSeconds = 5
+                    Name            = "Overhead Star Reach",
+                    Instruction     = "Stand tall. Raise both arms as high as you can overhead, then hold. Let your feet step slightly apart.",
+                    JointToMeasure  = "OverheadShoulder",
+                    DurationSeconds = 8,
+                    TrackMinimum    = false   // want MAX (most open)
                 },
+
+                // ── Test 2: Lateral Arm Raise ────────────────────────────────
+                // Arms raise sideways to ~180°.
+                // Primary metric: shoulder abduction (max angle).
                 new ROMTest
                 {
-                    Name        = "Knee Bend",
-                    Instruction = "Slowly bend your knees as deep as you can as if sitting down, then hold.",
-                    JointToMeasure = "LeftKnee",
-                    DurationSeconds = 5
+                    Name            = "Lateral Arm Raise",
+                    Instruction     = "From neutral, raise both arms out to your sides as high as possible and hold.",
+                    JointToMeasure  = "LateralShoulder",
+                    DurationSeconds = 7,
+                    TrackMinimum    = false   // want MAX
                 },
+
+                // ── Test 3: Wide Squat ───────────────────────────────────────
+                // Feet apart → squat down as deep as possible.
+                // Primary metric: knee flexion (min angle = deeper bend).
                 new ROMTest
                 {
-                    Name        = "Hip Hinge",
-                    Instruction = "Stand straight then slowly bend forward at the hips as far as comfortable.",
-                    JointToMeasure = "LeftHip",
-                    DurationSeconds = 5
+                    Name            = "Wide Squat",
+                    Instruction     = "Step your feet wide apart, then squat down as low as comfortable. Hold at your deepest point.",
+                    JointToMeasure  = "SquatKnee",
+                    DurationSeconds = 8,
+                    TrackMinimum    = true    // want MIN (most bent)
                 },
+
+                // ── Test 4: Single-Leg Balance ───────────────────────────────
+                // Lift one leg (tree prep). Stability + asymmetry baseline.
+                // Primary metric: hip drop variance (min = most stable).
                 new ROMTest
                 {
-                    Name        = "Lateral Arm Raise",
-                    Instruction = "Raise both arms out to your sides as high as you can and hold.",
-                    JointToMeasure = "RightShoulder",
-                    DurationSeconds = 5
+                    Name            = "Single-Leg Balance",
+                    Instruction     = "Shift weight onto your right leg and lift your left foot off the ground. Hold still for as long as you can.",
+                    JointToMeasure  = "BalanceHipDrop",
+                    DurationSeconds = 8,
+                    TrackMinimum    = true    // smaller drop = better stability
                 }
             };
         }
@@ -135,32 +160,37 @@ namespace capstoneOneShot.Services
         {
             int score = 0;
 
-            // Shoulder mobility — can they raise arms overhead?
-            if (_romResults.TryGetValue("LeftShoulder", out double leftShoulder))
+            // ── Test 1: Overhead Star Reach — shoulder flexion ───────────────
+            // Full overhead = ~170°; decent = 130°+
+            if (_romResults.TryGetValue("OverheadShoulder", out double overhead))
             {
-                if (leftShoulder >= 150) score += 2;       // full range
-                else if (leftShoulder >= 100) score += 1;  // moderate
+                if (overhead >= 155) score += 2;       // near-full overhead
+                else if (overhead >= 120) score += 1;  // moderate reach
             }
 
-            // Knee flexibility — how deep can they bend?
-            if (_romResults.TryGetValue("LeftKnee", out double leftKnee))
+            // ── Test 2: Lateral Arm Raise — shoulder abduction ───────────────
+            // Full abduction = ~90° at the joint angle
+            if (_romResults.TryGetValue("LateralShoulder", out double lateral))
             {
-                if (leftKnee <= 90) score += 2;           // deep bend
-                else if (leftKnee <= 120) score += 1;      // moderate bend
+                if (lateral >= 80) score += 2;         // full lateral range
+                else if (lateral >= 55) score += 1;    // moderate
             }
 
-            // Hip hinge
-            if (_romResults.TryGetValue("LeftHip", out double leftHip))
+            // ── Test 3: Wide Squat — knee flexion ────────────────────────────
+            // Deeper = lower angle; full squat ~60°, moderate ~90°
+            if (_romResults.TryGetValue("SquatKnee", out double squat))
             {
-                if (leftHip <= 60) score += 2;            // good forward fold
-                else if (leftHip <= 90) score += 1;        // moderate
+                if (squat <= 70)  score += 2;          // deep squat
+                else if (squat <= 105) score += 1;     // moderate
             }
 
-            // Lateral shoulder
-            if (_romResults.TryGetValue("RightShoulder", out double rightShoulder))
+            // ── Test 4: Single-Leg Balance — stability ────────────────────────
+            // Hip drop during balance: smaller = more stable
+            // 0.02 = very stable, 0.06 = moderate sway
+            if (_romResults.TryGetValue("BalanceHipDrop", out double hipDrop))
             {
-                if (rightShoulder >= 80) score += 2;
-                else if (rightShoulder >= 50) score += 1;
+                if (hipDrop <= 0.025) score += 2;      // stable
+                else if (hipDrop <= 0.05) score += 1;  // moderate sway
             }
 
             // Max possible score = 8
