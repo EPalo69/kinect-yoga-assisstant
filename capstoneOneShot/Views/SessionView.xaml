@@ -311,10 +311,10 @@
                                         BorderThickness="1.5"
                                         HorizontalAlignment="Center"
                                         Margin="0,0,0,18">
-                                    <TextBlock Text="⏸" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="PauseIcon" Text="⏸" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="PAUSED" FontSize="32" FontWeight="Bold" Foreground="#E8EDF2" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                <TextBlock Text="Your session is paused." FontSize="13" Foreground="#6B7A8D" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,28"/>
+                                <TextBlock x:Name="PauseTitleText" Text="PAUSED" FontSize="32" FontWeight="Bold" Foreground="#E8EDF2" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="PauseDescriptionText" Text="Your session is paused." FontSize="13" Foreground="#6B7A8D" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,28"/>
                                 <!-- Actions -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
                                     <!-- Continue Button -->
@@ -325,7 +325,7 @@
                                         </Ellipse>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="▶" FontSize="36" Foreground="#4DD0E1" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                            <TextBlock Text="Continue" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
+                                            <TextBlock x:Name="ResumeButtonText" Text="Continue" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Grid>
                                     <!-- Back to Selection Button -->
@@ -353,7 +353,7 @@
                                 </StackPanel>
                                 <!-- Gesture hint -->
                                 <Border BorderBrush="#0FFFFFFF" BorderThickness="0,1,0,0" Margin="0,22,0,0" Padding="0,18,0,0">
-                                    <TextBlock Text="✕  Cross arms again to resume" FontSize="11" Foreground="#3D4A5A" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="PauseGestureHint" Text="✕  Cross arms again to resume" FontSize="11" Foreground="#3D4A5A" HorizontalAlignment="Center"/>
                                 </Border>
                             </StackPanel>
                         </Border>

@@ -32,6 +32,8 @@ namespace capstoneOneShot.Views
         private bool _isPaused = false;
         private PointerSelectionService _pointerService;
         private BodyDetectionStatus _currentBodyStatus = BodyDetectionStatus.NotDetected;
+        private DispatcherTimer _bodyLostTimer;
+        private DispatcherTimer _kinectCheckTimer;
 
         private const double JointRadius = 6;
 
@@ -98,6 +100,29 @@ namespace capstoneOneShot.Views
 
             // Initialize status pills
             InitStatusPills();
+
+            _bodyLostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _bodyLostTimer.Tick += (s, e) =>
+            {
+                _bodyLostTimer.Stop();
+                if (_currentBodyStatus == BodyDetectionStatus.NotDetected)
+                {
+                    PauseIcon.Text = "⚠";
+                    TriggerPause("USER LOST", "We lost track of you. Step back into frame to resume.", true);
+                }
+            };
+
+            _kinectCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _kinectCheckTimer.Tick += (s, e) =>
+            {
+                if (!_kinectManager.IsConnected)
+                {
+                    _kinectCheckTimer.Stop();
+                    PauseIcon.Text = "⚠";
+                    TriggerPause("KINECT DISCONNECTED", "Your Kinect sensor has been disconnected. Return to Main Menu.", false);
+                }
+            };
+            _kinectCheckTimer.Start();
         }
         private void UnhookKinect()
         {
@@ -110,6 +135,9 @@ namespace capstoneOneShot.Views
                 _pauseService.Disable();
                 _pauseService.PauseDetected -= OnPauseTriggered;
             }
+
+            _bodyLostTimer?.Stop();
+            _kinectCheckTimer?.Stop();
 
             _pointerService?.Stop();
             _pointerService?.ClearButtons();
@@ -279,6 +307,11 @@ namespace capstoneOneShot.Views
             _currentBodyStatus = status;
             Dispatcher.Invoke(() =>
             {
+                if (status == BodyDetectionStatus.NotDetected)
+                    _bodyLostTimer?.Start();
+                else
+                    _bodyLostTimer?.Stop();
+
                 switch (status)
                 {
                     case BodyDetectionStatus.Detected:
@@ -663,33 +696,58 @@ namespace capstoneOneShot.Views
             }
             else
             {
-                _isPaused = true;
-                _holdTimer?.Stop();
-                _sessionTimer?.Stop();
-                _tts.Reset();
-                PauseOverlay.Visibility = Visibility.Visible;
-                PauseOverlay.UpdateLayout();
+                PauseIcon.Text = "⏸";
+                ResumeButtonText.Text = "Continue";
+                TriggerPause("PAUSED", "Your session is paused.", true);
+            }
+        }
 
-                // ★ Initialize pointer service on the pause cursor canvas
-                _pointerService = new PointerSelectionService(PauseOverlayCursorCanvas);
+        private void TriggerPause(string title, string description, bool canResume)
+        {
+            _isPaused = true;
+            _holdTimer?.Stop();
+            _sessionTimer?.Stop();
+            _tts.Reset();
 
-                // ★ Register the three pause buttons — circumference = π * diameter = π * 150 ≈ 471
-                const double circ = 471;
+            PauseTitleText.Text = title;
+            PauseDescriptionText.Text = description;
+
+            ResumeButton.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
+            SelectionButton.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
+            PauseGestureHint.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
+
+            PauseOverlay.Visibility = Visibility.Visible;
+            PauseOverlay.UpdateLayout();
+
+            if (_pointerService != null)
+            {
+                _pointerService.Stop();
+                _pointerService.ClearButtons();
+            }
+
+            // ★ Initialize pointer service on the pause cursor canvas
+            _pointerService = new PointerSelectionService(PauseOverlayCursorCanvas);
+
+            // ★ Register the pause buttons — circumference = π * diameter = π * 150 ≈ 471
+            const double circ = 471;
+            if (canResume)
+            {
                 _pointerService.RegisterButton(ResumeButton, circ, () => Dispatcher.Invoke(ResumeSession));
                 _pointerService.RegisterButton(SelectionButton, circ, () => Dispatcher.Invoke(() => SelectionButton_Click(null, null)));
-                _pointerService.RegisterButton(EndSessionButton, circ, () => Dispatcher.Invoke(() => EndSessionButton_Click(null, null)));
-
-                _pointerService.BringCursorToFront();
-                _pointerService.Start();
-                _pointerService.ResetPosition();
-
-                double cx = PauseOverlayCursorCanvas.ActualWidth / 2;
-                double cy = PauseOverlayCursorCanvas.ActualHeight / 2;
-                _pointerService.ProcessHandPosition(new Point(cx, cy), true);
-
-                // ★ Feed hand position to pointer service via skeleton frames
-                _kinectManager.SkeletonFrameReady += OnPauseSkeletonFrame;
             }
+            _pointerService.RegisterButton(EndSessionButton, circ, () => Dispatcher.Invoke(() => EndSessionButton_Click(null, null)));
+
+            _pointerService.BringCursorToFront();
+            _pointerService.Start();
+            _pointerService.ResetPosition();
+
+            double cx = PauseOverlayCursorCanvas.ActualWidth / 2;
+            double cy = PauseOverlayCursorCanvas.ActualHeight / 2;
+            _pointerService.ProcessHandPosition(new Point(cx, cy), true);
+
+            // ★ Feed hand position to pointer service via skeleton frames
+            _kinectManager.SkeletonFrameReady -= OnPauseSkeletonFrame;
+            _kinectManager.SkeletonFrameReady += OnPauseSkeletonFrame;
         }
 
         private void OnPauseSkeletonFrame(Skeleton[] skeletons)

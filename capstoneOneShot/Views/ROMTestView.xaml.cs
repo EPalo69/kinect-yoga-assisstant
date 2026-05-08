@@ -110,6 +110,8 @@ namespace capstoneOneShot.Views
         private bool _testRunning       = false;
         private bool _waitingForDetection = false;
         private BodyDetectionStatus _currentBodyStatus = BodyDetectionStatus.NotDetected;
+        private DispatcherTimer _bodyLostTimer;
+        private DispatcherTimer _kinectCheckTimer;
 
         private const double JointRadius = 6;
 
@@ -136,6 +138,29 @@ namespace capstoneOneShot.Views
             _pauseService.PauseDetected += OnPauseTriggered;
             _pauseService.Enable(PauseGestureCanvas);
             Panel.SetZIndex(PauseGestureCanvas, 9999);
+
+            _bodyLostTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _bodyLostTimer.Tick += (s, e) =>
+            {
+                _bodyLostTimer.Stop();
+                if (_currentBodyStatus == BodyDetectionStatus.NotDetected)
+                {
+                    PauseIcon.Text = "⚠";
+                    TriggerPause("USER LOST", "We lost track of you. Step back into frame to resume.", true);
+                }
+            };
+
+            _kinectCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _kinectCheckTimer.Tick += (s, e) =>
+            {
+                if (!_kinectManager.IsConnected)
+                {
+                    _kinectCheckTimer.Stop();
+                    PauseIcon.Text = "⚠";
+                    TriggerPause("KINECT DISCONNECTED", "Your Kinect sensor has been disconnected. Return to Main Menu.", false);
+                }
+            };
+            _kinectCheckTimer.Start();
 
             LoadCurrentTest();
             Loaded += (s, e) => InitStatusPills();
@@ -167,10 +192,8 @@ namespace capstoneOneShot.Views
 
             // Show "ready" overlay using the pause panel
             PauseIcon.Text             = "🏁";
-            PauseTitleText.Text        = "READY TO START";
-            PauseDescriptionText.Text  = $"Up next: {test.Name}\nReview the instructions and step into position.";
             ResumeButtonText.Text      = "Start Test";
-            PauseOverlay.Visibility    = Visibility.Visible;
+            TriggerPause("READY TO START", $"Up next: {test.Name}\nReview the instructions and step into position.", true);
         }
 
         private void BuildJointRows(string testName)
@@ -222,6 +245,11 @@ namespace capstoneOneShot.Views
         {
             Dispatcher.Invoke(() =>
             {
+                if (status == BodyDetectionStatus.NotDetected)
+                    _bodyLostTimer?.Start();
+                else
+                    _bodyLostTimer?.Stop();
+
                 switch (status)
                 {
                     case BodyDetectionStatus.Detected:
@@ -574,33 +602,53 @@ namespace capstoneOneShot.Views
             }
             else
             {
-                _isPaused = true;
-                _countdownTimer?.Stop();
-
                 PauseIcon.Text            = "⏸";
-                PauseTitleText.Text       = "PAUSED";
-                PauseDescriptionText.Text = "Your test is paused. Take a moment before continuing.";
                 ResumeButtonText.Text     = "Continue";
-                PauseOverlay.Visibility   = Visibility.Visible;
-                PauseOverlay.UpdateLayout();
+                TriggerPause("PAUSED", "Your test is paused. Take a moment before continuing.", true);
+            }
+        }
 
-                _pointerService = new PointerSelectionService(PauseOverlayCursorCanvas);
+        private void TriggerPause(string title, string description, bool canResume)
+        {
+            _isPaused = true;
+            _countdownTimer?.Stop();
 
-                const double circ = 471;
+            PauseTitleText.Text       = title;
+            PauseDescriptionText.Text = description;
+
+            ResumeButton.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
+            RedoButton.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
+            PauseGestureHint.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
+
+            PauseOverlay.Visibility   = Visibility.Visible;
+            PauseOverlay.UpdateLayout();
+
+            if (_pointerService != null)
+            {
+                _pointerService.Stop();
+                _pointerService.ClearButtons();
+            }
+
+            _pointerService = new PointerSelectionService(PauseOverlayCursorCanvas);
+
+            const double circ = 471;
+            if (canResume)
+            {
                 _pointerService.RegisterButton(ResumeButton,     circ, () => Dispatcher.Invoke(ResumeTest));
                 _pointerService.RegisterButton(RedoButton,       circ, () => Dispatcher.Invoke(RedoCurrentTest));
-                _pointerService.RegisterButton(EndSessionButton, circ, () => Dispatcher.Invoke(() => EndSessionButton_Click(null, null)));
-
-                _pointerService.BringCursorToFront();
-                _pointerService.Start();
-                _pointerService.ResetPosition();
-
-                double cx = PauseOverlayCursorCanvas.ActualWidth  / 2;
-                double cy = PauseOverlayCursorCanvas.ActualHeight / 2;
-                _pointerService.ProcessHandPosition(new Point(cx, cy), true);
-
-                _kinectManager.SkeletonFrameReady += OnPauseSkeletonFrame;
             }
+            _pointerService.RegisterButton(EndSessionButton, circ, () => Dispatcher.Invoke(() => EndSessionButton_Click(null, null)));
+
+            _pointerService.BringCursorToFront();
+            _pointerService.Start();
+            _pointerService.ResetPosition();
+
+            double cx = PauseOverlayCursorCanvas.ActualWidth  / 2;
+            double cy = PauseOverlayCursorCanvas.ActualHeight / 2;
+            _pointerService.ProcessHandPosition(new Point(cx, cy), true);
+
+            _kinectManager.SkeletonFrameReady -= OnPauseSkeletonFrame;
+            _kinectManager.SkeletonFrameReady += OnPauseSkeletonFrame;
         }
 
         private void OnPauseSkeletonFrame(Skeleton[] skeletons)
@@ -715,6 +763,8 @@ namespace capstoneOneShot.Views
         private void Cleanup()
         {
             _countdownTimer?.Stop();
+            _bodyLostTimer?.Stop();
+            _kinectCheckTimer?.Stop();
             _kinectManager.ColorFrameReady   -= OnColorFrameReady;
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  -= OnBodyStatusChanged;

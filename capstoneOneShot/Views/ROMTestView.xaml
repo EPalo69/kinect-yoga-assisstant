@@ -427,7 +427,7 @@
                                 <!-- Gesture hint -->
                                 <Border BorderBrush="#0FFFFFFF" BorderThickness="0,1,0,0"
                                         Margin="0,22,0,0" Padding="0,18,0,0">
-                                    <TextBlock Text="✕  Raise hands again to resume"
+                                    <TextBlock x:Name="PauseGestureHint" Text="✕  Raise hands again to resume"
                                                FontSize="11" Foreground="#3D4A5A"
                                                HorizontalAlignment="Center"/>
                                 </Border>
