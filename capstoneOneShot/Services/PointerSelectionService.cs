@@ -56,8 +56,9 @@ namespace capstoneOneShot.Services
                 IsHitTestVisible = false
             };
 
-            if (!_canvas.Children.Contains(HandCursor))
-                _canvas.Children.Add(HandCursor);
+            // Clear any lingering pointer balls left on the canvas from previous instantiations
+            _canvas.Children.Clear();
+            _canvas.Children.Add(HandCursor);
 
             _hoverTimer = new DispatcherTimer
             {
@@ -75,12 +76,18 @@ namespace capstoneOneShot.Services
 
         public void Start()
         {
+            if (!_canvas.Children.Contains(HandCursor))
+                _canvas.Children.Add(HandCursor);
             _hoverTimer.Start();
         }
 
         public void Stop()
         {
             _hoverTimer.Stop();
+            if (_canvas != null && _canvas.Children.Contains(HandCursor))
+            {
+                _canvas.Children.Remove(HandCursor);
+            }
         }
 
         public void RegisterButton(Grid btn, double circumference, Action onFire)

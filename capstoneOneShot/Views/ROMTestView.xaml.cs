@@ -95,6 +95,16 @@ namespace capstoneOneShot.Views
         }
     }
 
+    // ── ViewModel for each result card ────────────────────────────────────────
+    public class ResultCardVM
+    {
+        public string TestName   { get; set; }
+        public string Metric     { get; set; }
+        public string Value      { get; set; }
+        public string Rating     { get; set; }
+        public string ValueColor { get; set; } = "#4DD0E1";
+    }
+
     // ────────────────────────────────────────────────────────────────────────
     public partial class ROMTestView : Window
     {
@@ -187,6 +197,13 @@ namespace capstoneOneShot.Views
             _waitingForDetection = false;
             CountdownText.Text = "";
             CountdownSubLabel.Text = "";
+
+            // Reset time bar to full visually before test starts
+            Dispatcher.InvokeAsync(() =>
+            {
+                TimeBarFill.BeginAnimation(System.Windows.FrameworkElement.WidthProperty, null);
+                TimeBarFill.Width = (TimeBarFill.Parent as System.Windows.FrameworkElement)?.ActualWidth ?? ActualWidth;
+            });
 
             // Build the joint angle rows for this test
             BuildJointRows(test.Name);
@@ -567,6 +584,20 @@ namespace capstoneOneShot.Views
             CountdownText.Text     = _secondsRemaining.ToString();
             CountdownSubLabel.Text = "SECONDS REMAINING";
 
+            // Animate the time bar: full width → 0 over the test duration
+            Dispatcher.InvokeAsync(() =>
+            {
+                double trackW = (TimeBarFill.Parent as System.Windows.FrameworkElement)?.ActualWidth ?? ActualWidth;
+                // Cancel any prior animation then set start value
+                TimeBarFill.BeginAnimation(System.Windows.FrameworkElement.WidthProperty, null);
+                TimeBarFill.Width = trackW;
+
+                var anim = new System.Windows.Media.Animation.DoubleAnimation(
+                    trackW, 0,
+                    new Duration(TimeSpan.FromSeconds(test.DurationSeconds)));
+                TimeBarFill.BeginAnimation(System.Windows.FrameworkElement.WidthProperty, anim);
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
+
             _countdownTimer          = new DispatcherTimer();
             _countdownTimer.Interval = TimeSpan.FromSeconds(1);
             _countdownTimer.Tick    += CountdownTick;
@@ -576,12 +607,15 @@ namespace capstoneOneShot.Views
         private void CountdownTick(object sender, EventArgs e)
         {
             _secondsRemaining--;
-            CountdownText.Text = _secondsRemaining > 0 ? _secondsRemaining.ToString() : "";
+            CountdownText.Text     = _secondsRemaining > 0 ? _secondsRemaining.ToString() : "";
             CountdownSubLabel.Text = _secondsRemaining > 0 ? "SECONDS REMAINING" : "";
 
             if (_secondsRemaining <= 0)
             {
                 _countdownTimer.Stop();
+                // Snap bar to zero cleanly
+                TimeBarFill.BeginAnimation(System.Windows.FrameworkElement.WidthProperty, null);
+                TimeBarFill.Width = 0;
                 AdvanceTest();
             }
         }
@@ -625,6 +659,17 @@ namespace capstoneOneShot.Views
         {
             _isPaused = true;
             _countdownTimer?.Stop();
+
+            if (_testRunning)
+            {
+                // Freeze the time bar at its exact current width
+                Dispatcher.Invoke(() =>
+                {
+                    double currentW = TimeBarFill.ActualWidth;
+                    TimeBarFill.BeginAnimation(System.Windows.FrameworkElement.WidthProperty, null);
+                    TimeBarFill.Width = currentW;
+                });
+            }
 
             PauseTitleText.Text       = title;
             PauseDescriptionText.Text = description;
@@ -702,7 +747,19 @@ namespace capstoneOneShot.Views
 
             // Re-start countdown only if test was already running
             if (_testRunning && _secondsRemaining > 0)
+            {
                 _countdownTimer?.Start();
+
+                // Resume time bar animation
+                Dispatcher.InvokeAsync(() =>
+                {
+                    double currentW = TimeBarFill.ActualWidth;
+                    var anim = new System.Windows.Media.Animation.DoubleAnimation(
+                        currentW, 0,
+                        new Duration(TimeSpan.FromSeconds(_secondsRemaining)));
+                    TimeBarFill.BeginAnimation(System.Windows.FrameworkElement.WidthProperty, anim);
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
+            }
         }
 
         // ── Button handlers ──────────────────────────────────────────────────
@@ -759,15 +816,107 @@ namespace capstoneOneShot.Views
         // ── Finish all tests ─────────────────────────────────────────────────
         private void FinishAllTests()
         {
-            ResultDifficulty     = _romService.EvaluateDifficulty();
+            ResultDifficulty       = _romService.EvaluateDifficulty();
             UserSession.ROMProfile = _romService.BuildProfile(ResultDifficulty);
 
-            MessageBox.Show(
-                "Your ROM results have been recorded.\n\nWe will filter poses based on your flexibility.",
-                "Assessment Complete",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            // Stop all active timers
+            _countdownTimer?.Stop();
+            _bodyLostTimer?.Stop();
+            _kinectCheckTimer?.Stop();
 
+            // Dismiss pause overlay if open
+            PauseOverlay.Visibility = Visibility.Collapsed;
+
+            // Reset time bar
+            TimeBarFill.BeginAnimation(System.Windows.FrameworkElement.WidthProperty, null);
+            TimeBarFill.Width = 0;
+
+            // Build result cards
+            var cards = BuildResultCards();
+            ResultCards.ItemsSource = cards;
+
+            // Difficulty badge colour
+            string diffColor;
+            switch (ResultDifficulty)
+            {
+                case DifficultyLevel.Advanced:     diffColor = "#22C55E"; break;
+                case DifficultyLevel.Intermediate: diffColor = "#F59E0B"; break;
+                default:                           diffColor = "#4DD0E1"; break;
+            }
+            DifficultyLabel.Text       = ResultDifficulty.ToString();
+            DifficultyLabel.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(diffColor));
+            DifficultyBadge.Background = new SolidColorBrush(
+                Color.FromArgb(40,
+                    ((Color)ColorConverter.ConvertFromString(diffColor)).R,
+                    ((Color)ColorConverter.ConvertFromString(diffColor)).G,
+                    ((Color)ColorConverter.ConvertFromString(diffColor)).B));
+            DifficultyBadge.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(diffColor));
+            DifficultyBadge.BorderThickness = new Thickness(1);
+
+            // Update ROM pill
+            UpdateROMPill();
+
+            // Wire Return button to pointer service
+            if (_pointerService == null)
+                _pointerService = new PointerSelectionService(PauseOverlayCursorCanvas);
+
+            ResultsOverlay.Visibility = Visibility.Visible;
+        }
+
+        private List<ResultCardVM> BuildResultCards()
+        {
+            var profile = UserSession.ROMProfile;
+            var cards   = new List<ResultCardVM>();
+
+            // Test 1: Overhead Star Reach
+            double overhead = profile.ShoulderFlexion;
+            cards.Add(new ResultCardVM
+            {
+                TestName   = "Overhead Star Reach",
+                Metric     = "Shoulder flexion (max angle)",
+                Value      = overhead.ToString("F1") + "°",
+                Rating     = overhead >= 155 ? "Excellent" : overhead >= 120 ? "Good" : "Needs Work",
+                ValueColor = overhead >= 155 ? "#22C55E"  : overhead >= 120 ? "#F59E0B" : "#EF4444"
+            });
+
+            // Test 2: Lateral Arm Raise
+            double lateral = profile.LateralShoulder;
+            cards.Add(new ResultCardVM
+            {
+                TestName   = "Lateral Arm Raise",
+                Metric     = "Shoulder abduction (max angle)",
+                Value      = lateral.ToString("F1") + "°",
+                Rating     = lateral >= 80 ? "Excellent" : lateral >= 55 ? "Good" : "Needs Work",
+                ValueColor = lateral >= 80 ? "#22C55E"  : lateral >= 55 ? "#F59E0B" : "#EF4444"
+            });
+
+            // Test 3: Wide Squat
+            double squat = profile.KneeFlexion;
+            cards.Add(new ResultCardVM
+            {
+                TestName   = "Wide Squat",
+                Metric     = "Knee flexion (min angle = deeper)",
+                Value      = squat.ToString("F1") + "°",
+                Rating     = squat <= 70 ? "Excellent" : squat <= 105 ? "Good" : "Needs Work",
+                ValueColor = squat <= 70 ? "#22C55E"  : squat <= 105 ? "#F59E0B" : "#EF4444"
+            });
+
+            // Test 4: Single-Leg Balance
+            double hipDrop = profile.HipFlexion;   // repurposed field
+            cards.Add(new ResultCardVM
+            {
+                TestName   = "Single-Leg Balance",
+                Metric     = "Hip drop (lower = more stable)",
+                Value      = hipDrop.ToString("F3") + " m",
+                Rating     = hipDrop <= 0.025 ? "Excellent" : hipDrop <= 0.05 ? "Good" : "Needs Work",
+                ValueColor = hipDrop <= 0.025 ? "#22C55E"  : hipDrop <= 0.05 ? "#F59E0B" : "#EF4444"
+            });
+
+            return cards;
+        }
+
+        private void ReturnToMenu_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
             Cleanup();
             Application.Current.MainWindow.Show();
             Close();

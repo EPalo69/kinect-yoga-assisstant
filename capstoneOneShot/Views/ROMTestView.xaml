@@ -11,10 +11,9 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="44"/>
-            <!-- Top bar -->
-            <RowDefinition Height="*"/>
-            <!-- Main -->
+            <RowDefinition Height="44"/>  <!-- Top bar -->
+            <RowDefinition Height="6"/>   <!-- Time bar -->
+            <RowDefinition Height="*"/>   <!-- Main -->
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
@@ -87,10 +86,26 @@
             </Grid>
         </Border>
 
-        <!-- ══════════════════════════════════════════
-             MAIN: Camera fills entire width (no sidebar)
-        ══════════════════════════════════════════ -->
-        <Border Grid.Row="1" Background="#050810" ClipToBounds="True">
+        <!-- ── Time Remaining Bar ── -->
+        <Border Grid.Row="1" Background="#0D1020">
+            <!-- Track (dark background) -->
+            <Grid>
+                <!-- Fill — width is driven by animation in code-behind -->
+                <Border x:Name="TimeBarFill"
+                        HorizontalAlignment="Left"
+                        Width="0">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#4DD0E1" Offset="0"/>
+                            <GradientStop Color="#22C55E" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ══ MAIN: Camera fills entire width ══ -->
+        <Border Grid.Row="2" Background="#050810" ClipToBounds="True">
             <Grid>
 
                 <!-- Layer 1: Camera feed -->
@@ -434,6 +449,122 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                </Border>
+
+                <!-- ═══ RESULTS OVERLAY — shown when all tests complete ═══ -->
+                <Border x:Name="ResultsOverlay"
+                        Background="#F0080C14"
+                        Visibility="Collapsed"
+                        Panel.ZIndex="500">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    MaxWidth="700"
+                                    Margin="40,48,40,48">
+
+                            <!-- Title block -->
+                            <TextBlock Text="ASSESSMENT COMPLETE"
+                                       FontSize="13" FontWeight="Bold"
+                                       Foreground="#4DD0E1"
+                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock Text="ROM Results"
+                                       FontSize="36" FontWeight="Bold"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="ResultsSubtitle"
+                                       Text="Here's how you performed across all four tests."
+                                       FontSize="14" Foreground="#6B7A8D"
+                                       HorizontalAlignment="Center" Margin="0,0,0,32"/>
+
+                            <!-- Difficulty badge -->
+                            <Border x:Name="DifficultyBadge"
+                                    HorizontalAlignment="Center"
+                                    CornerRadius="24" Padding="28,10"
+                                    Margin="0,0,0,36">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Assigned Level: "
+                                               FontSize="15" Foreground="#9CA3AF"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DifficultyLabel"
+                                               Text="Beginner"
+                                               FontSize="18" FontWeight="Bold"
+                                               Foreground="White"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Result cards (populated in code-behind) -->
+                            <ItemsControl x:Name="ResultCards">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0F1525"
+                                                BorderBrush="#1E2D4A"
+                                                BorderThickness="1"
+                                                CornerRadius="14"
+                                                Padding="24,18"
+                                                Margin="0,0,0,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding TestName}"
+                                                               FontSize="16" FontWeight="SemiBold"
+                                                               Foreground="White"/>
+                                                    <TextBlock Text="{Binding Metric}"
+                                                               FontSize="12" Foreground="#6B7A8D"
+                                                               Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Value}"
+                                                               FontSize="22" FontWeight="Bold"
+                                                               Foreground="{Binding ValueColor}"
+                                                               HorizontalAlignment="Right"/>
+                                                    <TextBlock Text="{Binding Rating}"
+                                                               FontSize="11"
+                                                               Foreground="{Binding ValueColor}"
+                                                               HorizontalAlignment="Right"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Return to Menu button -->
+                            <Grid x:Name="Btn_ReturnMenu"
+                                  Width="150" Height="150"
+                                  HorizontalAlignment="Center"
+                                  Cursor="Hand" Margin="0,24,0,0"
+                                  MouseLeftButtonUp="ReturnToMenu_Click">
+                                <Ellipse x:Name="Glow_Return" Fill="#004DD0E1" Opacity="0"/>
+                                <Ellipse Stroke="#4DD0E1" StrokeThickness="2" Fill="#111827"/>
+                                <Ellipse x:Name="Progress_Return"
+                                         Stroke="#4DD0E1" StrokeThickness="4" Fill="Transparent"
+                                         StrokeDashArray="0,471" StrokeDashOffset="-1"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                </Ellipse>
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="🏠" FontSize="28" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Main Menu" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="White" HorizontalAlignment="Center"
+                                               Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                        </StackPanel>
+                    </ScrollViewer>
                 </Border>
 
             </Grid>
