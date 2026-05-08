@@ -340,6 +340,33 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ═══ POSE REFERENCE IMAGE — transparent box overlay (bottom-right) ═══ -->
+                <Border Background="#D9080C14"
+                        BorderBrush="#334DD0E1"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="12"
+                        Width="200"
+                        Height="240"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,20,20">
+                    <Grid>
+                        <!-- Label at top -->
+                        <TextBlock Text="TEST REFERENCE"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#9E9E9E"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Top"
+                                   Margin="0,0,0,8"/>
+                        <!-- The actual image -->
+                        <Image x:Name="PoseReferenceImage"
+                               Stretch="Uniform"
+                               Margin="0,20,0,0"/>
+                    </Grid>
+                </Border>
+
                 <!-- ═══ PAUSE OVERLAY ═══ -->
                 <Border x:Name="PauseOverlay"
                         Background="#E0080C14"
@@ -379,7 +406,10 @@
                                            Text="Your test is paused. Take a moment before continuing."
                                            FontSize="13" Foreground="#6B7A8D"
                                            HorizontalAlignment="Center" TextAlignment="Center"
-                                           LineHeight="22" Margin="0,0,0,28"/>
+                                           LineHeight="22" Margin="0,0,0,16"/>
+                                           
+                                <!-- ROM Pose Image in Pause -->
+                                <Image x:Name="PausePoseImage" Height="140" Margin="0,0,0,28" Visibility="Collapsed" Stretch="Uniform"/>
 
                                 <!-- Circular action buttons -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">

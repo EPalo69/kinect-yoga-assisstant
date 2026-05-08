@@ -168,6 +168,7 @@ namespace capstoneOneShot.Views
                 {
                     _kinectCheckTimer.Stop();
                     PauseIcon.Text = "⚠";
+                    PausePoseImage.Visibility = Visibility.Collapsed;
                     TriggerPause("KINECT DISCONNECTED", "Your Kinect sensor has been disconnected. Return to Main Menu.", false);
                 }
             };
@@ -208,10 +209,25 @@ namespace capstoneOneShot.Views
             // Build the joint angle rows for this test
             BuildJointRows(test.Name);
 
+            // Set the images
+            if (!string.IsNullOrEmpty(test.ImagePath))
+            {
+                var bitmap = new System.Windows.Media.Imaging.BitmapImage(new Uri(test.ImagePath));
+                PoseReferenceImage.Source = bitmap;
+                PausePoseImage.Source     = bitmap;
+                PausePoseImage.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PoseReferenceImage.Source = null;
+                PausePoseImage.Source     = null;
+                PausePoseImage.Visibility = Visibility.Collapsed;
+            }
+
             // Show "ready" overlay using the pause panel
             PauseIcon.Text             = "🏁";
             ResumeButtonText.Text      = "Start Test";
-            TriggerPause("READY TO START", $"Up next: {test.Name}\nReview the instructions and step into position.", true);
+            TriggerPause($"UP NEXT: {test.Name.ToUpper()}", test.Instruction, true);
         }
 
         private void BuildJointRows(string testName)
@@ -651,6 +667,7 @@ namespace capstoneOneShot.Views
             {
                 PauseIcon.Text            = "⏸";
                 ResumeButtonText.Text     = "Continue";
+                PausePoseImage.Visibility = Visibility.Collapsed;
                 TriggerPause("PAUSED", "Your test is paused. Take a moment before continuing.", true);
             }
         }

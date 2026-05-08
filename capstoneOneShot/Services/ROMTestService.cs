@@ -72,6 +72,7 @@ namespace capstoneOneShot.Services
                     Instruction     = "Stand tall. Raise both arms as high as you can overhead, then hold. Let your feet step slightly apart.",
                     JointToMeasure  = "OverheadShoulder",
                     DurationSeconds = 8,
+                    ImagePath       = "pack://application:,,,/Assets/ROM/overhead-star-reach.png",
                     TrackMinimum    = false   // want MAX (most open)
                 },
 
@@ -84,6 +85,7 @@ namespace capstoneOneShot.Services
                     Instruction     = "From neutral, raise both arms out to your sides as high as possible and hold.",
                     JointToMeasure  = "LateralShoulder",
                     DurationSeconds = 7,
+                    ImagePath       = "pack://application:,,,/Assets/ROM/lateral-arm-raise.png",
                     TrackMinimum    = false   // want MAX
                 },
 
@@ -96,6 +98,7 @@ namespace capstoneOneShot.Services
                     Instruction     = "Step your feet wide apart, then squat down as low as comfortable. Hold at your deepest point.",
                     JointToMeasure  = "SquatKnee",
                     DurationSeconds = 8,
+                    ImagePath       = "pack://application:,,,/Assets/ROM/wide-squat.png",
                     TrackMinimum    = true    // want MIN (most bent)
                 },
 
@@ -108,6 +111,7 @@ namespace capstoneOneShot.Services
                     Instruction     = "Shift weight onto your right leg and lift your left foot off the ground. Hold still for as long as you can.",
                     JointToMeasure  = "BalanceHipDrop",
                     DurationSeconds = 8,
+                    ImagePath       = "pack://application:,,,/Assets/ROM/single-leg-balance.png",
                     TrackMinimum    = true    // smaller drop = better stability
                 }
             };
@@ -215,6 +219,7 @@ namespace capstoneOneShot.Services
         public string Instruction { get; set; }
         public string JointToMeasure { get; set; }
         public int DurationSeconds { get; set; }
+        public string ImagePath { get; set; }
 
         /// <summary>
         /// If true, we track the minimum angle (e.g. knee bends).

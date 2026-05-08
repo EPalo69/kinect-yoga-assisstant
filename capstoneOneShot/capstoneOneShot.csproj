@@ -268,6 +268,12 @@
   <ItemGroup>
     <Resource Include="Assets\Icons\pause-gesture.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\ROM\lateral-arm-raise.png" />
+    <Resource Include="Assets\ROM\overhead-star-reach.png" />
+    <Resource Include="Assets\ROM\single-leg-balance.png" />
+    <Resource Include="Assets\ROM\wide-squat.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\CommunityToolkit.Mvvm.8.3.2\build\CommunityToolkit.Mvvm.targets" Condition="Exists('..\packages\CommunityToolkit.Mvvm.8.3.2\build\CommunityToolkit.Mvvm.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
