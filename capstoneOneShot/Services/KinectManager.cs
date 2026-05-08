@@ -31,7 +31,12 @@ namespace capstoneOneShot.Services
         // Body detection status event — fires whenever tracking status changes
         public event Action<BodyDetectionStatus> BodyStatusChanged;
 
+        // Voice command event — fires when a recognized phrase is spoken
+        public event Action<string> VoiceCommandHeard;
+
         private BodyDetectionStatus _lastStatus = BodyDetectionStatus.NotDetected;
+        private object _speechEngine; // Holds either Microsoft.Speech or System.Speech engine
+
 
         // ---------------------------------------------------------------
         // Initialize and start the sensor
@@ -103,8 +108,82 @@ namespace capstoneOneShot.Services
             _sensor.ColorFrameReady += OnColorFrameReady;
 
             _sensor.Start();
+
+            // Initialize Speech Recognition
+            InitializeSpeechRecognition();
+
             return true;
         }
+
+        // ---------------------------------------------------------------
+        // Speech Recognition Setup
+        // ---------------------------------------------------------------
+        private void InitializeSpeechRecognition()
+        {
+            try
+            {
+                var engine = new System.Speech.Recognition.SpeechRecognitionEngine();
+
+                var choices = new System.Speech.Recognition.Choices();
+                choices.Add(new string[] { "pause", "resume" });
+
+                var gb = new System.Speech.Recognition.GrammarBuilder();
+                gb.Append(choices);
+
+                var g = new System.Speech.Recognition.Grammar(gb);
+                engine.LoadGrammar(g);
+
+                engine.SpeechRecognized += (s, e) =>
+                {
+                    if (e.Result.Confidence > 0.6f)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            VoiceCommandHeard?.Invoke(e.Result.Text.ToLower());
+                        });
+                    }
+                };
+
+                // Try to use the Kinect Microphone array first
+                bool kinectMicSuccess = false;
+                try
+                {
+                    if (_sensor != null && _sensor.IsRunning)
+                    {
+                        _sensor.AudioSource.EchoCancellationMode = EchoCancellationMode.None;
+                        _sensor.AudioSource.AutomaticGainControlEnabled = false;
+                        var kinectStream = _sensor.AudioSource.Start();
+                        
+                        var audioFormat = new System.Speech.AudioFormat.SpeechAudioFormatInfo(
+                            System.Speech.AudioFormat.EncodingFormat.Pcm, 
+                            16000, 16, 1, 32000, 2, null);
+                            
+                        engine.SetInputToAudioStream(kinectStream, audioFormat);
+                        kinectMicSuccess = true;
+                        System.Diagnostics.Debug.WriteLine("Using Kinect Microphone stream for voice commands.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to bind Kinect Audio stream to System.Speech: {ex.Message}");
+                }
+
+                // Fallback to default user mic
+                if (!kinectMicSuccess)
+                {
+                    engine.SetInputToDefaultAudioDevice();
+                    System.Diagnostics.Debug.WriteLine("Using Default System Microphone for voice commands.");
+                }
+
+                engine.RecognizeAsync(System.Speech.Recognition.RecognizeMode.Multiple);
+                _speechEngine = engine;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Speech recognition failed to initialize completely: {ex.Message}");
+            }
+        }
+
 
         // ---------------------------------------------------------------
         // Skeleton frame handler
@@ -180,8 +259,22 @@ namespace capstoneOneShot.Services
         // ---------------------------------------------------------------
         public void Shutdown()
         {
+            if (_speechEngine != null)
+            {
+                if (_speechEngine is IDisposable disposableEngine)
+                {
+                    disposableEngine.Dispose();
+                }
+                _speechEngine = null;
+            }
+
             if (_sensor != null && _sensor.IsRunning)
             {
+                if (_sensor.AudioSource != null)
+                {
+                    _sensor.AudioSource.Stop();
+                }
+
                 _sensor.SkeletonFrameReady -= OnSkeletonFrameReady;
                 _sensor.ColorFrameReady -= OnColorFrameReady;
                 _sensor.Stop();

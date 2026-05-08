@@ -92,6 +92,7 @@ namespace capstoneOneShot.Views
             _kinectManager.ColorFrameReady   += OnColorFrameReady;
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
+            _kinectManager.VoiceCommandHeard  += OnVoiceCommandHeard;
 
             _pauseService = new PauseGestureService(_kinectManager);
             _pauseService.PauseDetected += OnPauseTriggered;
@@ -129,6 +130,7 @@ namespace capstoneOneShot.Views
             _kinectManager.ColorFrameReady -= OnColorFrameReady;
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged -= OnBodyStatusChanged;
+            _kinectManager.VoiceCommandHeard -= OnVoiceCommandHeard;
 
             if (_pauseService != null)
             {
@@ -687,6 +689,18 @@ namespace capstoneOneShot.Views
         }
 
         // ── Pause and Navigation Logic ────────────────────────────────────
+
+        private void OnVoiceCommandHeard(string command)
+        {
+            if (command == "pause" && !_isPaused)
+            {
+                OnPauseTriggered(this, EventArgs.Empty);
+            }
+            else if (command == "resume" && _isPaused)
+            {
+                ResumeSession();
+            }
+        }
 
         private void OnPauseTriggered(object sender, EventArgs e)
         {

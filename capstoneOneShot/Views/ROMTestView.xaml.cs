@@ -132,6 +132,7 @@ namespace capstoneOneShot.Views
             _kinectManager.ColorFrameReady   += OnColorFrameReady;
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
+            _kinectManager.VoiceCommandHeard  += OnVoiceCommandHeard;
 
             // Set up pause gesture (same as SessionView)
             _pauseService = new PauseGestureService(_kinectManager);
@@ -594,6 +595,18 @@ namespace capstoneOneShot.Views
         }
 
         // ── Pause gesture (identical pattern to SessionView) ─────────────────
+        private void OnVoiceCommandHeard(string command)
+        {
+            if (command == "pause" && !_isPaused)
+            {
+                OnPauseTriggered(this, EventArgs.Empty);
+            }
+            else if (command == "resume" && _isPaused)
+            {
+                ResumeButton_Click(this, null);
+            }
+        }
+
         private void OnPauseTriggered(object sender, EventArgs e)
         {
             if (_isPaused)
@@ -769,6 +782,7 @@ namespace capstoneOneShot.Views
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  -= OnBodyStatusChanged;
             _kinectManager.SkeletonFrameReady -= OnPauseSkeletonFrame;
+            _kinectManager.VoiceCommandHeard  -= OnVoiceCommandHeard;
 
             if (_pauseService != null)
             {
