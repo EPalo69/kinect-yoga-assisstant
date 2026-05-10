@@ -200,6 +200,33 @@
                                            Margin="0,6,0,0"/>
                             </StackPanel>
                         </Grid>
+
+                        <!-- ── Back button (Library Mode) ── -->
+                        <Grid x:Name="Btn_Back"
+                              Width="150" Height="150"
+                              Cursor="Hand" Tag="Back"
+                              HorizontalAlignment="Center"
+                              Margin="0,50,0,0"
+                              Visibility="Collapsed">
+                            <Ellipse x:Name="Glow_Back" Fill="#006B7280" Opacity="0"/>
+                            <Ellipse Stroke="#1E3A4A" StrokeThickness="2">
+                                <Ellipse.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#0D1828" Offset="0"/>
+                                        <GradientStop Color="#111E30" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse x:Name="Progress_Back" Stroke="#6B7280" StrokeThickness="4" Fill="Transparent" StrokeDashArray="0,471" StrokeDashOffset="-1" RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.RenderTransform>
+                                    <RotateTransform Angle="-90"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="←" FontSize="30" HorizontalAlignment="Center" Foreground="#6B7280"/>
+                                <TextBlock Text="Back" FontSize="13" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -327,7 +354,7 @@
                 Panel.ZIndex="20" IsHitTestVisible="False"/>
 
         <!-- ── Footer hint ── -->
-        <TextBlock Grid.Row="2"
+        <TextBlock x:Name="FooterHint" Grid.Row="2"
                    Text="Auto-proceeds in 8s  •  Hover over Proceed to speed up"
                    Foreground="#2D3748" FontSize="12"
                    HorizontalAlignment="Center"

@@ -27,15 +27,18 @@ namespace capstoneOneShot.Views
         private Grid _activeFilter;
         private PointerSelectionService _pointerService;
 
-        public PoseSelectionView(KinectManager kinectManager)
+        private readonly bool _isLibraryMode;
+
+        public PoseSelectionView(KinectManager kinectManager, bool isLibraryMode = false)
         {
             InitializeComponent();
             TransitionHelper.ApplyFadeInTransition(this);
             _kinectManager = kinectManager;
+            _isLibraryMode = isLibraryMode;
 
             _allPoses = PoseLibrary.GetAllPoses();
 
-            if (UserSession.HasCompletedROM)
+            if (!_isLibraryMode && UserSession.HasCompletedROM)
             {
                 var profile = UserSession.ROMProfile;
                 foreach (var pose in _allPoses)
@@ -54,7 +57,7 @@ namespace capstoneOneShot.Views
                 _pointerService.Start();
 
                 // Register static buttons
-                _pointerService.RegisterButton(Btn_Back, Math.PI * 100, () => BackButton_Click(null, null));
+                _pointerService.RegisterButton(Btn_Back, Math.PI * 150, () => BackButton_Click(null, null));
 
                 _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
                 _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
@@ -68,7 +71,7 @@ namespace capstoneOneShot.Views
 
         private void ShowROMBanner()
         {
-            if (UserSession.HasCompletedROM)
+            if (!_isLibraryMode && UserSession.HasCompletedROM)
             {
                 var profile = UserSession.ROMProfile;
                 ROMBannerLabel.Text = "Showing poses matched to your flexibility  •  "
@@ -115,7 +118,7 @@ namespace capstoneOneShot.Views
         {
             var pose = (PoseDefinition)grid.Tag;
             TransitionHelper.FadeOutAndClose(this, () => {
-                var detailView = new PoseDetailView(_kinectManager, pose);
+                var detailView = new PoseDetailView(_kinectManager, pose, _isLibraryMode);
                 detailView.Show();
             });
         }

@@ -95,7 +95,7 @@ namespace capstoneOneShot.Views
                     case "StartSession":
                         action = () => {
                             TransitionHelper.FadeOutAndHide(this, () => {
-                                var selection = new PoseSelectionView(_kinectManager);
+                                var selection = new PoseSelectionView(_kinectManager, false);
                                 selection.Show();
                             });
                         };
@@ -111,7 +111,7 @@ namespace capstoneOneShot.Views
                     case "PoseLibrary":
                         action = () => {
                             TransitionHelper.FadeOutAndHide(this, () => {
-                                var library = new PoseSelectionView(_kinectManager);
+                                var library = new PoseSelectionView(_kinectManager, true);
                                 library.Show();
                             });
                         };
@@ -119,7 +119,7 @@ namespace capstoneOneShot.Views
                     case "Settings":
                         action = () => {
                             TransitionHelper.FadeOutAndHide(this, () => {
-                                var settings = new n mSettingsView(_kinectManager);
+                                var settings = new SettingsView(_kinectManager);
                                 settings.Show();
                             });
                         };

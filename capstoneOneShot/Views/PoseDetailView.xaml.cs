@@ -44,11 +44,14 @@ namespace capstoneOneShot.Views
             public string Text   { get; set; }
         }
 
-        public PoseDetailView(KinectManager kinectManager, PoseDefinition pose)
+        private readonly bool _isLibraryMode;
+
+        public PoseDetailView(KinectManager kinectManager, PoseDefinition pose, bool isLibraryMode = false)
         {
             InitializeComponent();
             _kinectManager = kinectManager;
             _pose          = pose;
+            _isLibraryMode = isLibraryMode;
 
             Loaded += OnLoaded;
         }
@@ -63,20 +66,34 @@ namespace capstoneOneShot.Views
             _pointerService = new PointerSelectionService(MenuCanvas);
             _pointerService.Start();
 
-            // Mouse hover wires up the hover-boost flag
-            Btn_Proceed.MouseEnter += (s, ev) => { _hoveredByMouse = true;  SetGlow(true); };
-            Btn_Proceed.MouseLeave += (s, ev) => { _hoveredByMouse = false; SetGlow(false); };
-
-            // Direct click still works immediately
-            Btn_Proceed.MouseLeftButtonUp += (s, ev) => FireProceed();
-
-            // ── Start the auto-proceed countdown timer ────────────────────────
-            _proceedTimer = new DispatcherTimer
+            if (_isLibraryMode)
             {
-                Interval = TimeSpan.FromSeconds(1.0 / FPS)
-            };
-            _proceedTimer.Tick += OnProceedTick;
-            _proceedTimer.Start();
+                Btn_Proceed.Visibility = Visibility.Collapsed;
+                Btn_Back.Visibility = Visibility.Visible;
+                FooterHint.Visibility = Visibility.Collapsed;
+
+                _pointerService.RegisterButton(Btn_Back, Math.PI * 150, () => BackButton_Click(null, null));
+                Btn_Back.MouseEnter += (s, ev) => _pointerService.SetHover(Btn_Back);
+                Btn_Back.MouseLeave += (s, ev) => _pointerService.ClearHover();
+                Btn_Back.MouseLeftButtonUp += (s, ev) => { _pointerService.ClearHover(); BackButton_Click(null, null); };
+            }
+            else
+            {
+                // Mouse hover wires up the hover-boost flag
+                Btn_Proceed.MouseEnter += (s, ev) => { _hoveredByMouse = true;  SetGlow(true); };
+                Btn_Proceed.MouseLeave += (s, ev) => { _hoveredByMouse = false; SetGlow(false); };
+
+                // Direct click still works immediately
+                Btn_Proceed.MouseLeftButtonUp += (s, ev) => FireProceed();
+
+                // ── Start the auto-proceed countdown timer ────────────────────────
+                _proceedTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromSeconds(1.0 / FPS)
+                };
+                _proceedTimer.Tick += OnProceedTick;
+                _proceedTimer.Start();
+            }
 
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
@@ -215,6 +232,13 @@ namespace capstoneOneShot.Views
             Close();
         }
 
+        private void BackButton_Click(object sender, MouseButtonEventArgs e)
+        {
+            var library = new PoseSelectionView(_kinectManager, true);
+            library.Show();
+            Close();
+        }
+
         // ── Kinect skeleton handler ──────────────────────────────────────────
         private void OnSkeletonFrameReady(Microsoft.Kinect.Skeleton[] skeletons)
         {
@@ -235,7 +259,7 @@ namespace capstoneOneShot.Views
 
                 // Manual hit-test against Proceed button for hover-boost
                 bool overProceed = false;
-                if (tracked && Btn_Proceed.IsLoaded && Btn_Proceed.IsVisible)
+                if (!_isLibraryMode && tracked && Btn_Proceed.IsLoaded && Btn_Proceed.IsVisible)
                 {
                     try
                     {
@@ -256,7 +280,7 @@ namespace capstoneOneShot.Views
                 _hoveredByKinect = overProceed;
 
                 // Trigger glow transition only on state change
-                if (_hoveredByKinect != wasHovered)
+                if (!_isLibraryMode && _hoveredByKinect != wasHovered)
                     SetGlow(_hoveredByMouse || _hoveredByKinect);
             });
         }

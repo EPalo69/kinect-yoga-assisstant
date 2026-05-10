@@ -41,6 +41,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Skeleton and Menu Canvas Overlays -->
@@ -50,7 +51,7 @@
 
 
         <!-- Header -->
-        <Border Grid.Row="0" Padding="40,32,40,20">
+        <Border Grid.Row="0" Padding="40,24,40,10">
             <Grid>
                 <StackPanel HorizontalAlignment="Center">
                     <TextBlock Text="SELECT A POSE"
@@ -92,39 +93,23 @@
         </Border>
 
         <!-- Row 1: ROM profile banner -->
-        <Grid Grid.Row="1" Margin="40,0,40,12">
-            <Border x:Name="ROMBanner"
-                    Background="#0D2137"
-                    Padding="16,10"
-                    CornerRadius="8"
-                    Visibility="Collapsed"
-                    HorizontalAlignment="Center">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="✓  " Foreground="#4DD0E1"
-                       FontSize="13" FontWeight="Bold"
-                       VerticalAlignment="Center"/>
-                    <TextBlock x:Name="ROMBannerLabel"
-                       Text=""
-                       Foreground="#9CA3AF" FontSize="13"
-                       VerticalAlignment="Center"/>
-                </StackPanel>
-            </Border>
-            <Grid x:Name="Btn_Back" Width="100" Height="100" Cursor="Hand" Tag="Back"
-                      HorizontalAlignment="Center" VerticalAlignment="Center" Margin="400,0,0,0"
-                      MouseLeftButtonUp="BackButton_Click" Panel.ZIndex="5">
-                <Ellipse x:Name="Glow_Back" Fill="#006B7280" Opacity="0"/>
-                <Ellipse Stroke="#6B7280" StrokeThickness="2" Fill="#111827"/>
-                <Ellipse x:Name="Progress_Back" Stroke="#6B7280" StrokeThickness="4" Fill="Transparent" StrokeDashArray="0,314" StrokeDashOffset="-1" RenderTransformOrigin="0.5,0.5">
-                    <Ellipse.RenderTransform>
-                        <RotateTransform Angle="-90"/>
-                    </Ellipse.RenderTransform>
-                </Ellipse>
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="←" FontSize="20" Foreground="#6B7280" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Back" FontSize="11" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
-                </StackPanel>
-            </Grid>
-        </Grid>
+        <Border Grid.Row="1" x:Name="ROMBanner"
+                Margin="40,0,40,12"
+                Background="#0D2137"
+                Padding="16,10"
+                CornerRadius="8"
+                Visibility="Collapsed"
+                HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="✓  " Foreground="#4DD0E1"
+                   FontSize="13" FontWeight="Bold"
+                   VerticalAlignment="Center"/>
+                <TextBlock x:Name="ROMBannerLabel"
+                   Text=""
+                   Foreground="#9CA3AF" FontSize="13"
+                   VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
 
 
         <!-- Pose cards -->
@@ -177,8 +162,25 @@
             </ItemsControl>
         </ScrollViewer>
 
+        <!-- Back Button -->
+        <Grid Grid.Row="3" x:Name="Btn_Back" Width="150" Height="150" Cursor="Hand" Tag="Back"
+              HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-20,0,30"
+              MouseLeftButtonUp="BackButton_Click" Panel.ZIndex="5">
+            <Ellipse x:Name="Glow_Back" Fill="#006B7280" Opacity="0"/>
+            <Ellipse Stroke="#6B7280" StrokeThickness="2" Fill="#111827"/>
+            <Ellipse x:Name="Progress_Back" Stroke="#6B7280" StrokeThickness="4" Fill="Transparent" StrokeDashArray="0,471" StrokeDashOffset="-1" RenderTransformOrigin="0.5,0.5">
+                <Ellipse.RenderTransform>
+                    <RotateTransform Angle="-90"/>
+                </Ellipse.RenderTransform>
+            </Ellipse>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="←" FontSize="30" Foreground="#6B7280" HorizontalAlignment="Center"/>
+                <TextBlock Text="Back" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Grid>
+
         <!-- Footer -->
-        <TextBlock Grid.Row="3"
+        <TextBlock Grid.Row="4"
                    Text="Hover your hand over a button to select  •  Hold to confirm"
                    Foreground="#374151" FontSize="12"
                    HorizontalAlignment="Center" Margin="0,0,0,24"/>
