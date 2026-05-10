@@ -289,7 +289,6 @@ namespace capstoneOneShot.Views
                     case BodyDetectionStatus.Detected:
                         NoBodyOverlay.Visibility    = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
-                        SetTrackingStatus("Fully Tracked", "#4CAF50");
                         PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
                         PillBodyLabel.Text = "Body Detected";
                         PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
@@ -297,7 +296,6 @@ namespace capstoneOneShot.Views
                     case BodyDetectionStatus.PartialDetect:
                         NoBodyOverlay.Visibility    = Visibility.Collapsed;
                         PartialBodyBanner.Visibility = Visibility.Visible;
-                        SetTrackingStatus("Partial Tracking", "#F59E0B");
                         PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(245, 158, 11));
                         PillBodyLabel.Text = "Partial Body";
                         PillBodyLabel.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
@@ -305,7 +303,6 @@ namespace capstoneOneShot.Views
                     case BodyDetectionStatus.NotDetected:
                         NoBodyOverlay.Visibility    = Visibility.Visible;
                         PartialBodyBanner.Visibility = Visibility.Collapsed;
-                        SetTrackingStatus("Not Detected", "#EF4444");
                         ClearAngleReadouts();
                         PillBodyDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
                         PillBodyLabel.Text = "No Body Detected";
@@ -326,14 +323,6 @@ namespace capstoneOneShot.Views
                 _waitingForDetection = false;
                 StartCountdown();
             }
-        }
-
-        private void SetTrackingStatus(string text, string hex)
-        {
-            var color = (Color)ColorConverter.ConvertFromString(hex);
-            TrackingStatusLabel.Text       = text;
-            TrackingStatusLabel.Foreground = new SolidColorBrush(color);
-            TrackingDot.Fill               = new SolidColorBrush(color);
         }
 
         private void ClearAngleReadouts()

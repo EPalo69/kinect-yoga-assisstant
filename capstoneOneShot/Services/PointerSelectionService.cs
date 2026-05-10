@@ -23,18 +23,22 @@ namespace capstoneOneShot.Services
 
         // ── Fix 2: Hysteresis ────────────────────────────────────────────────
         // Candidate must be hovered for N consecutive frames before becoming active.
-        private const int HysteresisFrames = 4;
+        private const int AcquireFrames = 3;
+        private const int LossFrames = 10;
         private Grid _candidateButton = null;
         private int _candidateFrames = 0;
+        private int _lossFramesCount = 0;
 
         // ── Fix 3: Grace period on hand loss ─────────────────────────────────
         private const int GraceFrames = 9; // ~300ms at 30fps
         private int _graceCountdown = 0;
 
         private bool _isFiring = false;
+        private bool _isMouseHovering = false;
         private Grid _hoveredButton = null;
         private double _hoverProgress = 0;
         private DispatcherTimer _hoverTimer;
+        private DateTime _lastTickTime;
         private Canvas _canvas;
         private Dictionary<Grid, (double Circumference, Action FireAction)> _buttons 
             = new Dictionary<Grid, (double, Action)>();
@@ -78,6 +82,7 @@ namespace capstoneOneShot.Services
         {
             if (!_canvas.Children.Contains(HandCursor))
                 _canvas.Children.Add(HandCursor);
+            _lastTickTime = DateTime.Now;
             _hoverTimer.Start();
         }
 
@@ -110,6 +115,8 @@ namespace capstoneOneShot.Services
 
         public void ProcessHandPosition(Point handPoint, bool isTracked)
         {
+            if (_isMouseHovering) return; // Prevent Kinect from interrupting mouse
+
             if (!isTracked)
             {
                 // ── Fix 3: Don't snap the cursor away immediately ─────────────
@@ -173,22 +180,42 @@ namespace capstoneOneShot.Services
                 // Already on the active button, no candidate needed
                 _candidateButton = null;
                 _candidateFrames = 0;
+                _lossFramesCount = 0;
             }
-            else if (nearest == _candidateButton)
+            else if (nearest == null)
             {
-                _candidateFrames++;
-                if (_candidateFrames >= HysteresisFrames)
+                // Empty space
+                _candidateButton = null;
+                _candidateFrames = 0;
+                if (_hoveredButton != null)
                 {
-                    UpdateHover(nearest);
-                    _candidateButton = null;
-                    _candidateFrames = 0;
+                    _lossFramesCount++;
+                    if (_lossFramesCount >= LossFrames)
+                    {
+                        UpdateHover(null);
+                        _lossFramesCount = 0;
+                    }
                 }
             }
             else
             {
-                // New candidate — reset the counter
-                _candidateButton = nearest;
-                _candidateFrames = 1;
+                _lossFramesCount = 0;
+                if (nearest == _candidateButton)
+                {
+                    _candidateFrames++;
+                    if (_candidateFrames >= AcquireFrames)
+                    {
+                        UpdateHover(nearest);
+                        _candidateButton = null;
+                        _candidateFrames = 0;
+                    }
+                }
+                else
+                {
+                    // New candidate — reset the counter
+                    _candidateButton = nearest;
+                    _candidateFrames = 1;
+                }
             }
         }
 
@@ -203,20 +230,20 @@ namespace capstoneOneShot.Services
 
         private void OnHoverTick(object sender, EventArgs e)
         {
+            double dt = (DateTime.Now - _lastTickTime).TotalSeconds;
+            _lastTickTime = DateTime.Now;
+            if (dt > 0.1) dt = 0.1; // Cap dt to prevent massive jumps
+
             if (_hoveredButton == null)
             {
-                if (_hoverProgress > 0)
-                {
-                    _hoverProgress = Math.Max(0, _hoverProgress - (1.0 / FrameRate) * 2);
-                    UpdateProgressArc(_hoveredButton, _hoverProgress);
-                }
-                return;
+                return; // Decay logic is handled by UpdateHover resetting to 0 instantly for now.
             }
 
-            _hoverProgress += (1.0 / FrameRate) / HoldSeconds;
+            _hoverProgress += dt / HoldSeconds;
             if (_hoverProgress >= 1.0)
             {
-                _hoverProgress = 0;
+                _hoverProgress = 1.0;
+                UpdateProgressArc(_hoveredButton, 1.0);
                 FireButton(_hoveredButton);
                 return;
             }
@@ -273,8 +300,10 @@ namespace capstoneOneShot.Services
             if (_isFiring) return;
             _isFiring = true;
 
-            SetGlowOpacity(btn, 0);
-            UpdateProgressArc(btn, 0);
+            // Keep it visually full and glowing during the action
+            SetGlowOpacity(btn, 0.4);
+            UpdateProgressArc(btn, 1.0);
+            
             _hoveredButton = null;
             _hoverProgress = 0;
 
@@ -283,7 +312,14 @@ namespace capstoneOneShot.Services
                 data.FireAction?.Invoke();
             }
 
-            _isFiring = false;
+            // Clean up visual state asynchronously
+            Dispatcher.CurrentDispatcher.InvokeAsync(async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(300);
+                UpdateProgressArc(btn, 0);
+                SetGlowOpacity(btn, 0);
+                _isFiring = false;
+            });
         }
 
         public void ManualFire(Grid btn)
@@ -293,11 +329,13 @@ namespace capstoneOneShot.Services
 
         public void SetHover(Grid btn)
         {
+            _isMouseHovering = true;
             UpdateHover(btn);
         }
         
         public void ClearHover()
         {
+            _isMouseHovering = false;
             UpdateHover(null);
             _hoverProgress = 0;
         }

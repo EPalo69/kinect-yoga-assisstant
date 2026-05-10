@@ -161,22 +161,10 @@
                     </StackPanel>
                 </Border>
 
-                <!-- HUD: tracking status badge (top-left) -->
-                <Border Background="#BF080C14" BorderBrush="#33A5F5B2" BorderThickness="1"
-                        CornerRadius="14" Padding="10,5"
-                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,14,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Ellipse x:Name="TrackingDot" Width="7" Height="7"
-                                 Fill="#69F0AE" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                        <TextBlock x:Name="TrackingStatusLabel" Text="Tracking"
-                                   FontSize="11" FontWeight="Medium" Foreground="#69F0AE"/>
-                    </StackPanel>
-                </Border>
-
                 <!-- HUD: test name badge (top-right) -->
                 <Border Background="#BF080C14" BorderBrush="#334DD0E1" BorderThickness="1"
                         CornerRadius="14" Padding="10,5"
-                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,50,0,0">
+                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,14,0,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock x:Name="TestNameLabel" Text="Shoulder Raise"
                                    FontSize="11" Foreground="#6B7A8D"/>
