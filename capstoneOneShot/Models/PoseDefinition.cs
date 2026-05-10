@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace capstoneOneShot.Models
 {
@@ -32,5 +33,11 @@ namespace capstoneOneShot.Models
         public string ImageFileName { get; set; }
         public List<string> Instructions { get; set; } = new List<string>();
         public List<JointAngleRule> Rules { get; set; } = new List<JointAngleRule>();
+
+        // UI Properties
+        public bool IsSelectable { get; set; } = true;
+        public string WarningMessage { get; set; } = "";
+        public Visibility WarningVisibility => IsSelectable ? Visibility.Collapsed : Visibility.Visible;
+        public double CardOpacity => IsSelectable ? 1.0 : 0.5;
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.Kinect;
+using Microsoft.Kinect;
 using System;
 using System.Linq;
 using System.Windows;
@@ -68,8 +68,7 @@ namespace capstoneOneShot.Services
         public PauseGestureService(KinectManager kinectManager)
         {
             _kinectManager = kinectManager ?? throw new ArgumentNullException(nameof(kinectManager));
-            // Subscribe to the existing KinectManager skeleton event
-            _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
+            // Subscribe to the existing KinectManager skeleton event (removed gesture detection)
         }
 
         // ── Public API ────────────────────────────────────────────────────────
@@ -108,91 +107,17 @@ namespace capstoneOneShot.Services
         // Handler wired to KinectManager.SkeletonFrameReady
         private void OnSkeletonFrameReady(Skeleton[] skeletons)
         {
-            if (!_isEnabled) return;
-            if (skeletons == null || skeletons.Length == 0) { Application.Current?.Dispatcher.InvokeAsync(() => ProcessBody(null)); return; }
-
-            var skeleton = skeletons.FirstOrDefault(s => s.TrackingState == SkeletonTrackingState.Tracked);
-            Application.Current?.Dispatcher.InvokeAsync(() => ProcessBody(skeleton));
+            // Removed gesture detection logic
         }
 
         private void ProcessBody(Skeleton skeleton)
         {
-            // ── Cooldown: block re-trigger after firing ───────────────────────
-            if (_cooldownCount > 0)
-            {
-                _cooldownCount--;
-                // Keep overlay hidden during cooldown
-                SetOverlayVisible(false);
-                return;
-            }
-
-            if (skeleton == null)
-            {
-                // Lost tracking — bleed progress down quickly
-                if (_holdFrames > 0) _holdFrames = Math.Max(0, _holdFrames - 2);
-                ReportProgress(0f);
-                SetOverlayVisible(false);
-                return;
-            }
-
-            bool crossed = IsBothHandsAboveHead(skeleton);
-
-            if (crossed)
-            {
-                _holdFrames++;
-                float progress = Math.Min(1f, _holdFrames / (HoldSeconds * FrameRate));
-                ReportProgress(progress);
-                UpdateOverlayProgress(progress);
-                SetOverlayVisible(true);
-
-                if (_holdFrames >= (int)(HoldSeconds * FrameRate))
-                {
-                    FirePause();
-                }
-            }
-            else
-            {
-                // Bleed out smoothly rather than snapping to zero
-                if (_holdFrames > 0)
-                {
-                    _holdFrames = Math.Max(0, _holdFrames - 2);
-                    float progress = _holdFrames / (HoldSeconds * FrameRate);
-                    ReportProgress(progress);
-                    UpdateOverlayProgress(progress);
-
-                    if (_holdFrames == 0)
-                        SetOverlayVisible(false);
-                }
-                else
-                {
-                    SetOverlayVisible(false);
-                }
-            }
+            // Removed gesture detection logic
         }
 
         private bool IsBothHandsAboveHead(Skeleton skeleton)
         {
-            var joints = skeleton.Joints;
-
-            // Require all key joints to be tracked
-            JointType[] required =
-            {
-                JointType.WristRight, JointType.WristLeft,
-                JointType.Head
-            };
-
-            if (required.Any(j => joints[j].TrackingState == JointTrackingState.NotTracked))
-                return false;
-
-            float headY = joints[JointType.Head].Position.Y;
-            float leftWristY = joints[JointType.WristLeft].Position.Y;
-            float rightWristY = joints[JointType.WristRight].Position.Y;
-
-            // Both wrists must be above the head joint by at least 0.05m
-            bool leftAboveHead = leftWristY > headY + 0.05f;
-            bool rightAboveHead = rightWristY > headY + 0.05f;
-
-            return leftAboveHead && rightAboveHead;
+            return false;
         }
 
         // ── Fire pause ────────────────────────────────────────────────────────
@@ -293,8 +218,8 @@ namespace capstoneOneShot.Services
 
             var gestureLabel = new TextBlock
             {
-                Text = "RAISE HANDS",
-                FontSize = 13.5, // 9 * 1.5
+                Text = "CLICK OR SAY",
+                FontSize = 12, // 9 * 1.5
                 FontWeight = FontWeights.Bold,
                 Foreground = new SolidColorBrush(Color.FromRgb(0x4D, 0xD0, 0xE1)),
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -303,7 +228,7 @@ namespace capstoneOneShot.Services
 
             _labelText = new TextBlock
             {
-                Text = "to pause",
+                Text = "'PAUSE'",
                 FontSize = 15, // 10 * 1.5
                 FontWeight = FontWeights.SemiBold,
                 Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xE8, 0xED, 0xF2)),
@@ -480,8 +405,6 @@ namespace capstoneOneShot.Services
         public void Dispose()
         {
             Disable();
-            if (_kinectManager != null)
-                _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
         }
     }
 }

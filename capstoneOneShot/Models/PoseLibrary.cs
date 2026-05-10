@@ -168,8 +168,52 @@ namespace capstoneOneShot.Models
         // ---------------------------------------------------------------
         private static List<PoseDefinition> GetIntermediatePoses()
         {
-            // Temporarily empty — focusing on Mountain Pose calibration
-            return new List<PoseDefinition>();
+            return new List<PoseDefinition>
+            {
+                new PoseDefinition
+                {
+                    Name          = "Tree Pose (Overhead)",
+                    Description   = "Stand on one leg with the other foot resting on the inner thigh, hands raised high above your head.",
+                    BriefInfo     = "Improves balance and focus while stretching your shoulders and arms overhead.",
+                    Difficulty    = DifficultyLevel.Intermediate,
+                    HoldSeconds   = 60,
+                    ImageFileName = "tree-pose.png",
+
+                    Instructions = new List<string>
+                    {
+                        "Stand tall and shift your weight onto your left foot.",
+                        "Place your right foot on your left inner thigh or calf, avoiding the knee.",
+                        "Find your balance and engage your core.",
+                        "Slowly raise both hands straight overhead, reaching towards the sky.",
+                        "Keep your shoulders relaxed away from your ears."
+                    },
+
+                    Rules = new List<JointAngleRule>
+                    {
+                        new JointAngleRule
+                        {
+                            JointName = "LeftShoulder",
+                            MinAngle  = 160.0,
+                            MaxAngle  = 180.0,
+                            Feedback  = "Raise your left arm higher overhead."
+                        },
+                        new JointAngleRule
+                        {
+                            JointName = "RightShoulder",
+                            MinAngle  = 160.0,
+                            MaxAngle  = 180.0,
+                            Feedback  = "Raise your right arm higher overhead."
+                        },
+                        new JointAngleRule
+                        {
+                            JointName = "LeftKnee",
+                            MinAngle  = 170.0,
+                            MaxAngle  = 180.0,
+                            Feedback  = "Straighten your standing leg."
+                        }
+                    }
+                }
+            };
         }
 
         // ---------------------------------------------------------------
@@ -177,7 +221,7 @@ namespace capstoneOneShot.Models
         // ---------------------------------------------------------------
         private static List<PoseDefinition> GetAdvancedPoses()
         {
-            // Temporarily empty — focusing on Mountain Pose calibration
+            // Temporarily empty
             return new List<PoseDefinition>();
         }
     }

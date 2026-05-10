@@ -33,10 +33,20 @@ namespace capstoneOneShot.Views
             TransitionHelper.ApplyFadeInTransition(this);
             _kinectManager = kinectManager;
 
-            // Use ROM-filtered poses if available, otherwise all poses
-            _allPoses = UserSession.HasCompletedROM
-                ? PoseLibrary.GetPosesForUser(UserSession.ROMProfile)
-                : PoseLibrary.GetAllPoses();
+            _allPoses = PoseLibrary.GetAllPoses();
+
+            if (UserSession.HasCompletedROM)
+            {
+                var profile = UserSession.ROMProfile;
+                foreach (var pose in _allPoses)
+                {
+                    if (!profile.CanPerformPose(pose))
+                    {
+                        pose.IsSelectable = false;
+                        pose.WarningMessage = "Unavailable: Your ROM test indicates you do not have the required mobility for this pose.";
+                    }
+                }
+            }
 
             Loaded += (s, e) =>
             {
@@ -81,6 +91,10 @@ namespace capstoneOneShot.Views
         private void PoseCard_Loaded(object sender, RoutedEventArgs e)
         {
             var grid = (Grid)sender;
+            var pose = (PoseDefinition)grid.Tag;
+
+            if (!pose.IsSelectable) return;
+
             double circ = Math.PI * 300; // 300 is the width/height
             _pointerService.RegisterButton(grid, circ, () => SimulatePoseClick(grid));
             grid.MouseEnter += (s, ev) => _pointerService.SetHover(grid);
@@ -90,7 +104,11 @@ namespace capstoneOneShot.Views
         private void PoseCard_Unloaded(object sender, RoutedEventArgs e)
         {
             var grid = (Grid)sender;
-            _pointerService.UnregisterButton(grid);
+            var pose = (PoseDefinition)grid.Tag;
+            if (pose.IsSelectable)
+            {
+                _pointerService.UnregisterButton(grid);
+            }
         }
 
         private void SimulatePoseClick(Grid grid)
@@ -104,7 +122,12 @@ namespace capstoneOneShot.Views
 
         private void PoseCard_Click(object sender, MouseButtonEventArgs e)
         {
-            SimulatePoseClick((Grid)sender);
+            var grid = (Grid)sender;
+            var pose = (PoseDefinition)grid.Tag;
+            if (pose.IsSelectable)
+            {
+                SimulatePoseClick(grid);
+            }
         }
 
         private void BackButton_Click(object sender, MouseButtonEventArgs e)

@@ -154,7 +154,7 @@ namespace capstoneOneShot.Views
             _bodyLostTimer.Tick += (s, e) =>
             {
                 _bodyLostTimer.Stop();
-                if (_currentBodyStatus == BodyDetectionStatus.NotDetected)
+                if (!Properties.Settings.Default.KinectBypass && _currentBodyStatus == BodyDetectionStatus.NotDetected)
                 {
                     PauseIcon.Text = "⚠";
                     TriggerPause("USER LOST", "We lost track of you. Step back into frame to resume.", true);
@@ -164,7 +164,7 @@ namespace capstoneOneShot.Views
             _kinectCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _kinectCheckTimer.Tick += (s, e) =>
             {
-                if (!_kinectManager.IsConnected)
+                if (!Properties.Settings.Default.KinectBypass && !_kinectManager.IsConnected)
                 {
                     _kinectCheckTimer.Stop();
                     PauseIcon.Text = "⚠";
@@ -320,7 +320,7 @@ namespace capstoneOneShot.Views
         private void CheckAutoStart()
         {
             if (_waitingForDetection &&
-                _currentBodyStatus == BodyDetectionStatus.Detected &&
+                (Properties.Settings.Default.KinectBypass || _currentBodyStatus == BodyDetectionStatus.Detected) &&
                 !_testRunning)
             {
                 _waitingForDetection = false;
@@ -739,13 +739,15 @@ namespace capstoneOneShot.Views
                 return;
             }
 
-            var hand    = skeleton.Joints[JointType.HandRight];
-            bool tracked = hand.TrackingState == JointTrackingState.Tracked;
+            var leftHand = skeleton.Joints[JointType.HandLeft];
+            var rightHand = skeleton.Joints[JointType.HandRight];
+            var activeHand = leftHand.Position.Y > rightHand.Position.Y ? leftHand : rightHand;
+            bool tracked = activeHand.TrackingState == JointTrackingState.Tracked;
 
             Dispatcher.Invoke(() =>
             {
                 if (!tracked) { _pointerService.ProcessHandPosition(new Point(), false); return; }
-                Point cameraPoint  = MapToCanvas(hand.Position);
+                Point cameraPoint  = MapToCanvas(activeHand.Position);
                 Point overlayPoint = SkeletonCanvas.TransformToVisual(PauseOverlayCursorCanvas)
                                                    .Transform(cameraPoint);
                 _pointerService.ProcessHandPosition(overlayPoint, true);
@@ -949,7 +951,6 @@ namespace capstoneOneShot.Views
             _kinectManager.BodyStatusChanged  -= OnBodyStatusChanged;
             _kinectManager.SkeletonFrameReady -= OnPauseSkeletonFrame;
             _kinectManager.VoiceCommandHeard  -= OnVoiceCommandHeard;
-
             if (_pauseService != null)
             {
                 _pauseService.Disable();

@@ -97,7 +97,8 @@
 
                 <Grid>
                     <!-- Subtle radial glow behind image -->
-                    <Ellipse HorizontalAlignment="Center" VerticalAlignment="Center"
+                    <Ellipse HorizontalAlignment="Center" VerticalAlignment="Top"
+                             Margin="0,32,0,0"
                              Width="380" Height="380">
                         <Ellipse.Fill>
                             <RadialGradientBrush>
@@ -107,7 +108,7 @@
                         </Ellipse.Fill>
                     </Ellipse>
 
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,32,0,0">
                         <!-- Pose image -->
                         <Border CornerRadius="12" ClipToBounds="True"
                                 HorizontalAlignment="Center"
@@ -142,6 +143,63 @@
                                 </TextBlock>
                             </StackPanel>
                         </Border>
+
+                        <!-- ── Proceed button (hover-timer) ── -->
+                        <Grid x:Name="Btn_Proceed"
+                              Width="150" Height="150"
+                              Cursor="Hand" Tag="Proceed"
+                              HorizontalAlignment="Center"
+                              Margin="0,50,0,0">
+                            <Ellipse x:Name="Glow_Proceed">
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush>
+                                        <GradientStop Color="#604DD0E1" Offset="0"/>
+                                        <GradientStop Color="#00000000" Offset="1"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                                <Ellipse.Opacity>0</Ellipse.Opacity>
+                            </Ellipse>
+                            <!-- Base ring -->
+                            <Ellipse Stroke="#1E3A4A" StrokeThickness="2">
+                                <Ellipse.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#0D1828" Offset="0"/>
+                                        <GradientStop Color="#111E30" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <!-- Progress arc -->
+                            <Ellipse x:Name="Progress_Proceed"
+                                     StrokeThickness="4"
+                                     Fill="Transparent"
+                                     StrokeDashArray="0,471"
+                                     StrokeDashOffset="-1"
+                                     RenderTransformOrigin="0.5,0.5">
+                                <Ellipse.Stroke>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#4DD0E1" Offset="0"/>
+                                        <GradientStop Color="#7C3AED" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Ellipse.Stroke>
+                                <Ellipse.RenderTransform>
+                                    <RotateTransform Angle="-90"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                            <!-- Label -->
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="▶" FontSize="30" HorizontalAlignment="Center">
+                                    <TextBlock.Foreground>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#4DD0E1" Offset="0"/>
+                                            <GradientStop Color="#7C3AED" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                                <TextBlock Text="Proceed" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="White" HorizontalAlignment="Center"
+                                           Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -173,8 +231,6 @@
                         <RowDefinition Height="Auto"/>  <!-- Description -->
                         <RowDefinition Height="20"/>
                         <RowDefinition Height="*"/>     <!-- Instructions list -->
-                        <RowDefinition Height="24"/>
-                        <RowDefinition Height="Auto"/>  <!-- Proceed button -->
                     </Grid.RowDefinitions>
 
                     <!-- ── Header: pose name + difficulty badge ── -->
@@ -259,64 +315,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-
-                    <!-- ── Proceed button (hover-timer) ── -->
-                    <Grid Grid.Row="8"
-                          x:Name="Btn_Proceed"
-                          Width="150" Height="150"
-                          Cursor="Hand" Tag="Proceed"
-                          HorizontalAlignment="Center">
-                        <Ellipse x:Name="Glow_Proceed">
-                            <Ellipse.Fill>
-                                <RadialGradientBrush>
-                                    <GradientStop Color="#604DD0E1" Offset="0"/>
-                                    <GradientStop Color="#00000000" Offset="1"/>
-                                </RadialGradientBrush>
-                            </Ellipse.Fill>
-                            <Ellipse.Opacity>0</Ellipse.Opacity>
-                        </Ellipse>
-                        <!-- Base ring -->
-                        <Ellipse Stroke="#1E3A4A" StrokeThickness="2">
-                            <Ellipse.Fill>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#0D1828" Offset="0"/>
-                                    <GradientStop Color="#111E30" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Ellipse.Fill>
-                        </Ellipse>
-                        <!-- Progress arc -->
-                        <Ellipse x:Name="Progress_Proceed"
-                                 StrokeThickness="4"
-                                 Fill="Transparent"
-                                 StrokeDashArray="0,471"
-                                 StrokeDashOffset="-1"
-                                 RenderTransformOrigin="0.5,0.5">
-                            <Ellipse.Stroke>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#4DD0E1" Offset="0"/>
-                                    <GradientStop Color="#7C3AED" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Ellipse.Stroke>
-                            <Ellipse.RenderTransform>
-                                <RotateTransform Angle="-90"/>
-                            </Ellipse.RenderTransform>
-                        </Ellipse>
-                        <!-- Label -->
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="▶" FontSize="30" HorizontalAlignment="Center">
-                                <TextBlock.Foreground>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                        <GradientStop Color="#4DD0E1" Offset="0"/>
-                                        <GradientStop Color="#7C3AED" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </TextBlock.Foreground>
-                            </TextBlock>
-                            <TextBlock Text="Proceed" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="White" HorizontalAlignment="Center"
-                                       Margin="0,6,0,0"/>
-                        </StackPanel>
-                    </Grid>
-
                 </Grid>
             </Border>
 

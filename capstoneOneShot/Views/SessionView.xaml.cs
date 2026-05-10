@@ -106,7 +106,7 @@ namespace capstoneOneShot.Views
             _bodyLostTimer.Tick += (s, e) =>
             {
                 _bodyLostTimer.Stop();
-                if (_currentBodyStatus == BodyDetectionStatus.NotDetected)
+                if (!Properties.Settings.Default.KinectBypass && _currentBodyStatus == BodyDetectionStatus.NotDetected)
                 {
                     PauseIcon.Text = "⚠";
                     TriggerPause("USER LOST", "We lost track of you. Step back into frame to resume.", true);
@@ -116,7 +116,7 @@ namespace capstoneOneShot.Views
             _kinectCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _kinectCheckTimer.Tick += (s, e) =>
             {
-                if (!_kinectManager.IsConnected)
+                if (!Properties.Settings.Default.KinectBypass && !_kinectManager.IsConnected)
                 {
                     _kinectCheckTimer.Stop();
                     PauseIcon.Text = "⚠";
@@ -778,16 +778,17 @@ namespace capstoneOneShot.Views
                 return;
             }
 
-            // Use right hand — swap to WristRight if HandRight is unreliable
-            var hand = skeleton.Joints[JointType.HandRight];
-            bool tracked = hand.TrackingState == JointTrackingState.Tracked;
+            var leftHand = skeleton.Joints[JointType.HandLeft];
+            var rightHand = skeleton.Joints[JointType.HandRight];
+            var activeHand = leftHand.Position.Y > rightHand.Position.Y ? leftHand : rightHand;
+            bool tracked = activeHand.TrackingState == JointTrackingState.Tracked;
 
             Dispatcher.Invoke(() =>
             {
                 if (!tracked) { _pointerService.ProcessHandPosition(new Point(), false); return; }
 
                 // ★ Get position in camera canvas space
-                Point cameraPoint = MapToCanvas(hand.Position);
+                Point cameraPoint = MapToCanvas(activeHand.Position);
 
                 // ★ Remap from SkeletonCanvas space to PauseOverlayCursorCanvas space
                 Point overlayPoint = SkeletonCanvas.TransformToVisual(PauseOverlayCursorCanvas)

@@ -118,8 +118,10 @@ namespace capstoneOneShot.Views
                         break;
                     case "Settings":
                         action = () => {
-                            MessageBox.Show("Settings coming soon!", "Not Yet Implemented",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var settings = new n mSettingsView(_kinectManager);
+                                settings.Show();
+                            });
                         };
                         break;
                     case "Exit":
