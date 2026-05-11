@@ -20,6 +20,7 @@ namespace capstoneOneShot.Models
         public double MinAngle { get; set; }
         public double MaxAngle { get; set; }
         public string Feedback { get; set; }
+        public string AudioFile { get; set; }
     }
 
     public class PoseDefinition
@@ -31,6 +32,8 @@ namespace capstoneOneShot.Models
         public DifficultyLevel Difficulty { get; set; }
         public int HoldSeconds { get; set; }
         public string ImageFileName { get; set; }
+        public string InstructionAudioFolder { get; set; }
+        public string InstructionAudioPrefix { get; set; }
         public List<string> Instructions { get; set; } = new List<string>();
         public List<JointAngleRule> Rules { get; set; } = new List<JointAngleRule>();
 

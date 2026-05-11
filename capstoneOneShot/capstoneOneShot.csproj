@@ -166,7 +166,7 @@
     <Compile Include="Services\AvatarService.cs" />
     <Compile Include="Services\PauseGestureService.cs" />
     <Compile Include="Services\PointerSelectionService.cs" />
-    <Compile Include="Services\TextToSpeechService.cs" />
+    <Compile Include="Services\AudioPlaybackService.cs" />
     <Compile Include="Services\TransitionHelper.cs" />
     <Compile Include="Views\PoseDetailView.xaml.cs">
       <DependentUpon>PoseDetailView.xaml</DependentUpon>

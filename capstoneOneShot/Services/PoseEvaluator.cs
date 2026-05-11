@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using capstoneOneShot.Models;
 
@@ -29,12 +29,14 @@ namespace capstoneOneShot.Services
         public double DeviationDeg { get; set; } // 0 if within range, else degrees off
         public bool IsPassing { get; set; }
         public string Feedback { get; set; }
+        public string AudioFile { get; set; }
     }
 
     public class EvaluationResult
     {
         public double Score { get; set; }
         public List<string> Feedback { get; set; } = new List<string>();
+        public List<string> AudioFiles { get; set; } = new List<string>();
 
         // ★ Per-joint breakdown
         public List<JointDeviation> JointDeviations { get; set; } = new List<JointDeviation>();
@@ -119,7 +121,8 @@ namespace capstoneOneShot.Services
                     ExpectedMax = rule.MaxAngle,
                     DeviationDeg = deviation,
                     IsPassing = smoothedPass,
-                    Feedback = rule.Feedback
+                    Feedback = rule.Feedback,
+                    AudioFile = rule.AudioFile
                 });
 
                 result.JointDeviations = result.JointDeviations
@@ -131,10 +134,18 @@ namespace capstoneOneShot.Services
                     .Select(j => j.Feedback)
                     .ToList();
 
+                result.AudioFiles = result.JointDeviations
+                    .Where(j => !j.IsPassing)
+                    .Select(j => j.AudioFile)
+                    .ToList();
+
                 if (smoothedPass)
                     passed++;
                 else
+                {
                     result.Feedback.Add(rule.Feedback);
+                    result.AudioFiles.Add(rule.AudioFile);
+                }
             }
 
             result.Score = pose.Rules.Count > 0

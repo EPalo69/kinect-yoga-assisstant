@@ -74,100 +74,100 @@
                 <!-- All buttons start at 0,0 — PlaceButtons() in code moves them -->
 
                 <!-- Start Session -->
-                <Grid x:Name="Btn_StartSession" Width="150" Height="150"
+                <Grid x:Name="Btn_StartSession" Width="180" Height="180"
                       Cursor="Hand" Tag="StartSession">
                     <Ellipse x:Name="Glow_StartSession" Fill="#004DD0E1" Opacity="0"/>
                     <Ellipse Stroke="#4DD0E1" StrokeThickness="2" Fill="#111827"/>
                     <Ellipse x:Name="Progress_StartSession"
                              Stroke="#4DD0E1" StrokeThickness="4" Fill="Transparent"
-                             StrokeDashArray="0,471" StrokeDashOffset="-1"
+                             StrokeDashArray="0,600" StrokeDashOffset="-1"
                              RenderTransformOrigin="0.5,0.5">
                         <Ellipse.RenderTransform>
                             <RotateTransform Angle="-90"/>
                         </Ellipse.RenderTransform>
                     </Ellipse>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="▶" FontSize="28" Foreground="#4DD0E1" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Start" FontSize="13" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                        <TextBlock Text="Session" FontSize="13" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="▶" FontSize="34" Foreground="#4DD0E1" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Start" FontSize="15" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="Session" FontSize="15" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- ROM Test -->
-                <Grid x:Name="Btn_ROMTest" Width="150" Height="150"
+                <Grid x:Name="Btn_ROMTest" Width="180" Height="180"
                       Cursor="Hand" Tag="ROMTest">
                     <Ellipse x:Name="Glow_ROMTest" Fill="#0022C55E" Opacity="0"/>
                     <Ellipse Stroke="#22C55E" StrokeThickness="2" Fill="#111827"/>
                     <Ellipse x:Name="Progress_ROMTest"
                              Stroke="#22C55E" StrokeThickness="4" Fill="Transparent"
-                             StrokeDashArray="0,471" StrokeDashOffset="-1"
+                             StrokeDashArray="0,600" StrokeDashOffset="-1"
                              RenderTransformOrigin="0.5,0.5">
                         <Ellipse.RenderTransform>
                             <RotateTransform Angle="-90"/>
                         </Ellipse.RenderTransform>
                     </Ellipse>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="◎" FontSize="24" Foreground="#22C55E" HorizontalAlignment="Center"/>
-                        <TextBlock Text="ROM" FontSize="12" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                        <TextBlock Text="Test" FontSize="12" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="◎" FontSize="29" Foreground="#22C55E" HorizontalAlignment="Center"/>
+                        <TextBlock Text="ROM" FontSize="14" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="Test" FontSize="14" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- Pose Library -->
-                <Grid x:Name="Btn_PoseLibrary" Width="150" Height="150"
+                <Grid x:Name="Btn_PoseLibrary" Width="180" Height="180"
                       Cursor="Hand" Tag="PoseLibrary">
                     <Ellipse x:Name="Glow_PoseLibrary" Fill="#00A855F7" Opacity="0"/>
                     <Ellipse Stroke="#A855F7" StrokeThickness="2" Fill="#111827"/>
                     <Ellipse x:Name="Progress_PoseLibrary"
                              Stroke="#A855F7" StrokeThickness="4" Fill="Transparent"
-                             StrokeDashArray="0,471" StrokeDashOffset="-1"
+                             StrokeDashArray="0,600" StrokeDashOffset="-1"
                              RenderTransformOrigin="0.5,0.5">
                         <Ellipse.RenderTransform>
                             <RotateTransform Angle="-90"/>
                         </Ellipse.RenderTransform>
                     </Ellipse>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="☰" FontSize="24" Foreground="#A855F7" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Pose" FontSize="12" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                        <TextBlock Text="Library" FontSize="12" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="☰" FontSize="29" Foreground="#A855F7" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Pose" FontSize="14" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="Library" FontSize="14" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- Settings -->
-                <Grid x:Name="Btn_Settings" Width="150" Height="150"
+                <Grid x:Name="Btn_Settings" Width="180" Height="180"
                       Cursor="Hand" Tag="Settings">
                     <Ellipse x:Name="Glow_Settings" Fill="#00F59E0B" Opacity="0"/>
                     <Ellipse Stroke="#F59E0B" StrokeThickness="2" Fill="#111827"/>
                     <Ellipse x:Name="Progress_Settings"
                              Stroke="#F59E0B" StrokeThickness="4" Fill="Transparent"
-                             StrokeDashArray="0,408" StrokeDashOffset="-1"
+                             StrokeDashArray="0,600" StrokeDashOffset="-1"
                              RenderTransformOrigin="0.5,0.5">
                         <Ellipse.RenderTransform>
                             <RotateTransform Angle="-90"/>
                         </Ellipse.RenderTransform>
                     </Ellipse>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="⚙" FontSize="22" Foreground="#F59E0B" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Settings" FontSize="11" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="⚙" FontSize="26" Foreground="#F59E0B" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Settings" FontSize="13" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- Exit -->
-                <Grid x:Name="Btn_Exit" Width="150" Height="150"
+                <Grid x:Name="Btn_Exit" Width="180" Height="180"
                       Cursor="Hand" Tag="Exit">
                     <Ellipse x:Name="Glow_Exit" Fill="#00EF4444" Opacity="0"/>
                     <Ellipse Stroke="#EF4444" StrokeThickness="2" Fill="#111827"/>
                     <Ellipse x:Name="Progress_Exit"
                              Stroke="#EF4444" StrokeThickness="4" Fill="Transparent"
-                             StrokeDashArray="0,408" StrokeDashOffset="-1"
+                             StrokeDashArray="0,600" StrokeDashOffset="-1"
                              RenderTransformOrigin="0.5,0.5">
                         <Ellipse.RenderTransform>
                             <RotateTransform Angle="-90"/>
                         </Ellipse.RenderTransform>
                     </Ellipse>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="✕" FontSize="22" Foreground="#EF4444" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Exit" FontSize="11" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                        <TextBlock Text="✕" FontSize="26" Foreground="#EF4444" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Exit" FontSize="13" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Grid>
 

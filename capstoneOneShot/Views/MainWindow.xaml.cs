@@ -60,16 +60,16 @@ namespace capstoneOneShot.Views
             double ch = MenuCanvas.ActualHeight;
             double cx = cw / 2;
             double cy = ch / 2;
-            double size = 150;
+            double size = 180;
             double circ = Math.PI * size;
 
             var positions = new Dictionary<Grid, Point>
             {
-                { Btn_StartSession, new Point(cx,        cy - 300) }, // was cy - 120
-                { Btn_ROMTest,      new Point(cx - 210,  cy - 200) }, // was cy - 20
-                { Btn_PoseLibrary,  new Point(cx + 210,  cy - 200) }, // was cy - 20
-                { Btn_Settings,     new Point(cx - 380,  cy - 120) }, // was cy + 60
-                { Btn_Exit,         new Point(cx + 380,  cy - 120) }, // was cy + 60
+                { Btn_StartSession, new Point(cx,        cy - 250) }, 
+                { Btn_ROMTest,      new Point(cx - 200,  cy - 140) }, 
+                { Btn_PoseLibrary,  new Point(cx + 200,  cy - 140) }, 
+                { Btn_Settings,     new Point(cx - 400,  cy - 30) }, 
+                { Btn_Exit,         new Point(cx + 400,  cy - 30) }, 
             };
 
             foreach (var kvp in positions)

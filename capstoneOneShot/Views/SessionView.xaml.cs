@@ -41,7 +41,7 @@ namespace capstoneOneShot.Views
         private double _bestScore = 0;
         private PoseDefinition _currentPose => _currentPoseIndex < _poses.Count ? _poses[_currentPoseIndex] : null;
         private PoseDefinition _lastCompletedPose;
-        private readonly TextToSpeechService _tts;
+        private readonly AudioPlaybackService _audioService;
         private int _currentInstructionStep = 0;
         private bool _instructionStepSpeaking = false;
 
@@ -73,7 +73,7 @@ namespace capstoneOneShot.Views
             _kinectManager = kinectManager;
             _evaluator = new PoseEvaluator();
             _poses = new List<PoseDefinition> { pose };
-            _tts = new TextToSpeechService();
+            _audioService = new AudioPlaybackService();
 
             SetupUI(pose.Difficulty.ToString());
             SetupKinect();
@@ -152,8 +152,8 @@ namespace capstoneOneShot.Views
 
             _evaluator.ResetHistory();
 
-            // Reset TTS
-            _tts.Reset();
+            // Reset Audio
+            _audioService.Reset();
             _poseEverCorrect = false;
             _activeInstruction = null;
             _currentInstructionStep = 0;
@@ -404,32 +404,12 @@ namespace capstoneOneShot.Views
             {
                 // ════════════════════════════════════════════════════
                 // PHASE 1 — Walk through Instructions sequentially
-                // Each step advances only after TTS finishes speaking it.
-                // Corrections from Rules override if a joint fails.
+                // Each step advances only after audio finishes playing.
                 // ════════════════════════════════════════════════════
 
-                // ★ Correction override: if any joint is failing, speak
-                //   the correction and pause instruction progression
-                if (currentFeedback.Count > 0)
-                {
-                    // Mirror failing joints as corrections in the UI
-                    foreach (var item in _instructionItems)
-                        item.Status = item.Status == InstructionItemStatus.Completed
-                            ? InstructionItemStatus.Completed
-                            : item.Status; // keep current
-
-                    // Show correction in HUD overlay
-                    CorrectionBanner.Visibility = Visibility.Visible;
-                    CorrectionLabel.Text = currentFeedback[0];
-
-                    _tts.Speak(string.Empty, currentFeedback[0]);
-                    return;
-                }
-
-                // Hide correction when no failures
+                // Hide correction banner during phase 1
                 CorrectionBanner.Visibility = Visibility.Collapsed;
 
-                // ★ No joint failures — advance through instruction steps
                 if (_currentInstructionStep < _instructionItems.Count)
                 {
                     var activeItem = _instructionItems[_currentInstructionStep];
@@ -438,11 +418,12 @@ namespace capstoneOneShot.Views
                     {
                         activeItem.Status = InstructionItemStatus.Active;
                         CurrentInstructionLabel.Text = activeItem.Text;
-                        _tts.Speak(activeItem.Text, string.Empty);
+                        string audioPath = $"Audio/instructions/{_currentPose.InstructionAudioFolder}/{_currentPose.InstructionAudioPrefix}{_currentInstructionStep + 1}.wav";
+                        _audioService.Play(audioPath, string.Empty);
                     }
 
-                    // ★ Advance when TTS queue is empty (step was spoken)
-                    if (!_tts.IsSpeaking && activeItem.Status == InstructionItemStatus.Active)
+                    // ★ Advance when audio queue is empty (step was played)
+                    if (!_audioService.IsPlaying && activeItem.Status == InstructionItemStatus.Active)
                     {
                         activeItem.Status = InstructionItemStatus.Completed;
                         _currentInstructionStep++;
@@ -466,8 +447,8 @@ namespace capstoneOneShot.Views
                     CurrentInstructionLabel.Text = "Great! Now hold the pose.";
                     AllDoneBanner.Visibility = Visibility.Visible;
 
-                    _tts.Reset();
-                    _tts.Speak("Great! Now hold the pose.", string.Empty);
+                    _audioService.Reset();
+                    _audioService.Play("Audio/general-session/great_hold.wav", string.Empty);
                 }
             }
             else
@@ -489,7 +470,7 @@ namespace capstoneOneShot.Views
                     foreach (var item in _instructionItems)
                         item.Status = InstructionItemStatus.Completed;
 
-                    _tts.Speak("Good, keep holding.", string.Empty);
+                    _audioService.Play("Audio/general-session/good_hold.wav", string.Empty);
                     return;
                 }
 
@@ -509,13 +490,15 @@ namespace capstoneOneShot.Views
                 foreach (var item in _instructionItems.Where(i => !failingFeedback.Contains(i.Text)))
                     item.Status = InstructionItemStatus.Completed;
 
-                // Show correction in HUD overlay
                 CorrectionBanner.Visibility = Visibility.Visible;
                 CorrectionLabel.Text = currentFeedback[0];
                 CurrentInstructionLabel.Text = "Correction needed";
                 AllDoneBanner.Visibility = Visibility.Collapsed;
 
-                _tts.Speak(string.Empty, currentFeedback[0]);
+                if (result.AudioFiles != null && result.AudioFiles.Count > 0)
+                {
+                    _audioService.Play(string.Empty, result.AudioFiles[0]);
+                }
             }
         }
 
@@ -721,7 +704,13 @@ namespace capstoneOneShot.Views
             _isPaused = true;
             _holdTimer?.Stop();
             _sessionTimer?.Stop();
-            _tts.Reset();
+            _audioService.Reset();
+
+            if (title == "USER LOST") {
+                _audioService.Play("Audio/general-session/lost_user.wav", string.Empty);
+            } else if (title == "KINECT DISCONNECTED") {
+                _audioService.Play("Audio/general-session/kinect_disconnected.wav", string.Empty);
+            }
 
             PauseTitleText.Text = title;
             PauseDescriptionText.Text = description;
@@ -839,9 +828,12 @@ namespace capstoneOneShot.Views
 
         private void EndSession()
         {
-            _holdTimer?.Stop();
             _sessionTimer?.Stop();
-            _tts.Reset();
+            _holdTimer?.Stop();
+            _audioService.Reset();
+            
+            _audioService.Play("Audio/general-session/session_complete.wav", string.Empty);
+
             UnhookKinect();
             OpenResultsScreen();
             Close();

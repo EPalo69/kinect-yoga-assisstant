@@ -72,6 +72,8 @@ namespace capstoneOneShot.Models
                     Difficulty    = DifficultyLevel.Beginner,
                     HoldSeconds   = 120,
                     ImageFileName = "mountain-pose.png",
+                    InstructionAudioFolder = "mountain-pose",
+                    InstructionAudioPrefix = "mountain_",
 
                     // ── Phase 1: spoken step-by-step instructions ──────────────
                     Instructions = new List<string>
@@ -92,70 +94,80 @@ namespace capstoneOneShot.Models
                             JointName = "LeftElbow",
                             MinAngle  = 165.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Straighten your left arm fully at your side."
+                            Feedback  = "Straighten your left arm.",
+                            AudioFile = "corrective-feedback/arms-shoulders/straighten_left_arm.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "RightElbow",
                             MinAngle  = 165.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Straighten your right arm fully at your side."
+                            Feedback  = "Straighten your right arm.",
+                            AudioFile = "corrective-feedback/arms-shoulders/straighten_right_arm.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "LeftShoulder",
                             MinAngle  = 155.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Relax your left shoulder and keep your arm close to your side."
+                            Feedback  = "Relax your left shoulder.",
+                            AudioFile = "corrective-feedback/arms-shoulders/relax_left_shoulder.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "RightShoulder",
                             MinAngle  = 155.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Relax your right shoulder and keep your arm close to your side."
+                            Feedback  = "Relax your right shoulder.",
+                            AudioFile = "corrective-feedback/arms-shoulders/relax_right_shoulder.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "LeftKnee",
                             MinAngle  = 170.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Straighten your left knee without locking it."
+                            Feedback  = "Straighten your left leg.",
+                            AudioFile = "corrective-feedback/legs-knees/straighten_left_leg.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "RightKnee",
                             MinAngle  = 170.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Straighten your right knee without locking it."
+                            Feedback  = "Straighten your right leg.",
+                            AudioFile = "corrective-feedback/legs-knees/straighten_right_leg.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "LeftHip",
                             MinAngle  = 168.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Keep your hips neutral — do not tilt forward or back."
+                            Feedback  = "Keep your hips neutral.",
+                            AudioFile = "corrective-feedback/core-hips/keep_hips_neutral.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "RightHip",
                             MinAngle  = 168.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Keep your hips neutral — do not tilt forward or back."
+                            Feedback  = "Keep your hips neutral.",
+                            AudioFile = "corrective-feedback/core-hips/keep_hips_neutral.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "LeftWrist",
                             MinAngle  = 165.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Keep your left wrist straight and relaxed."
+                            Feedback  = "Straighten your left wrist.",
+                            AudioFile = "corrective-feedback/wrists/straighten_left_wrist.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "RightWrist",
                             MinAngle  = 165.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Keep your right wrist straight and relaxed."
+                            Feedback  = "Straighten your right wrist.",
+                            AudioFile = "corrective-feedback/wrists/straighten_right_wrist.wav"
                         }
                     }
                 }
@@ -178,6 +190,8 @@ namespace capstoneOneShot.Models
                     Difficulty    = DifficultyLevel.Intermediate,
                     HoldSeconds   = 60,
                     ImageFileName = "tree-pose.png",
+                    InstructionAudioFolder = "tree-pose",
+                    InstructionAudioPrefix = "tree_",
 
                     Instructions = new List<string>
                     {
@@ -195,21 +209,24 @@ namespace capstoneOneShot.Models
                             JointName = "LeftShoulder",
                             MinAngle  = 160.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Raise your left arm higher overhead."
+                            Feedback  = "Raise your left arm.",
+                            AudioFile = "corrective-feedback/arms-shoulders/raise_left_arm.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "RightShoulder",
                             MinAngle  = 160.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Raise your right arm higher overhead."
+                            Feedback  = "Raise your right arm.",
+                            AudioFile = "corrective-feedback/arms-shoulders/raise_right_arm.wav"
                         },
                         new JointAngleRule
                         {
                             JointName = "LeftKnee",
                             MinAngle  = 170.0,
                             MaxAngle  = 180.0,
-                            Feedback  = "Straighten your standing leg."
+                            Feedback  = "Straighten your left leg.",
+                            AudioFile = "corrective-feedback/legs-knees/straighten_left_leg.wav"
                         }
                     }
                 }
