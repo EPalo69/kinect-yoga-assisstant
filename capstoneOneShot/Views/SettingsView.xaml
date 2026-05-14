@@ -47,11 +47,69 @@
                         </StackPanel>
                         
                         <CheckBox x:Name="KinectBypassToggle" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                  Checked="KinectBypassToggle_Changed" Unchecked="KinectBypassToggle_Changed">
+                                  Checked="Setting_Changed" Unchecked="Setting_Changed">
                             <CheckBox.LayoutTransform>
                                 <ScaleTransform ScaleX="2" ScaleY="2"/>
                             </CheckBox.LayoutTransform>
                         </CheckBox>
+                    </Grid>
+                </Border>
+
+                <!-- Hide Skeleton Toggle -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20" Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Hide Skeleton" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock Text="Keep the 3D skeleton hidden during sessions and tests." 
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <CheckBox x:Name="HideSkeletonToggle" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                  Checked="Setting_Changed" Unchecked="Setting_Changed">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="AUDIO" FontSize="16" FontWeight="SemiBold" Foreground="#4DD0E1" Margin="0,32,0,20"/>
+                
+                <!-- Audio Output -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                            <TextBlock Text="Audio Output Device" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock Text="Select the speaker or headphones used for voice instructions." 
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <ComboBox x:Name="AudioOutputCombo" Grid.Column="1" VerticalAlignment="Center" SelectionChanged="AudioOutputCombo_SelectionChanged"/>
+                    </Grid>
+                </Border>
+
+                <!-- Audio Input -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20" Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                            <TextBlock Text="Audio Input Device" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock Text="Select the microphone used for voice commands." 
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <ComboBox x:Name="AudioInputCombo" Grid.Column="1" VerticalAlignment="Center" SelectionChanged="AudioInputCombo_SelectionChanged"/>
                     </Grid>
                 </Border>
             </StackPanel>

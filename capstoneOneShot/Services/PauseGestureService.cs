@@ -47,9 +47,6 @@ namespace capstoneOneShot.Services
         // ── Overlay UI ────────────────────────────────────────────────────────
         private Canvas _overlayCanvas;
         private Grid _overlayRoot;     // the entire overlay container
-        private Ellipse _bgCircle;        // dark background disc
-        private Ellipse _progressArc;     // stroke-dasharray progress ring
-        private Ellipse _glowRing;        // outer glow that pulses on completion
         private TextBlock _labelText;       // "Hold to pause" / "Pausing…"
         private TextBlock _iconText;        // crossed-arms icon character
         private bool _overlayVisible = false;
@@ -235,44 +232,6 @@ namespace capstoneOneShot.Services
                 HorizontalAlignment = HorizontalAlignment.Center
             };
 
-            _bgCircle = new Ellipse
-            {
-                Width = 156, // 104 * 1.5
-                Height = 156,
-                Fill = Brushes.Transparent,
-                Stroke = new SolidColorBrush(Color.FromArgb(40, 77, 208, 225)),
-                StrokeThickness = 4.5, // 3 * 1.5
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            double arcDiameter = 156 - (RingThickness * 1.5);
-            _progressArc = new Ellipse
-            {
-                Width = arcDiameter,
-                Height = arcDiameter,
-                Fill = Brushes.Transparent,
-                Stroke = new SolidColorBrush(Color.FromRgb(77, 208, 225)),
-                StrokeThickness = RingThickness * 1.5,
-                StrokeDashArray = new DoubleCollection { 0, RingCircumference * 1.5 },
-                RenderTransformOrigin = new Point(0.5, 0.5),
-                RenderTransform = new RotateTransform(-90),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            _glowRing = new Ellipse
-            {
-                Width = 171, // 114 * 1.5
-                Height = 171,
-                Fill = Brushes.Transparent,
-                Stroke = new SolidColorBrush(Color.FromArgb(60, 77, 208, 225)),
-                StrokeThickness = 12, // 8 * 1.5
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Opacity = 0
-            };
-
             textStack.Children.Add(_iconText);
             textStack.Children.Add(gestureLabel);
             textStack.Children.Add(_labelText);
@@ -282,9 +241,6 @@ namespace capstoneOneShot.Services
             innerGrid.Children.Add(textStack);
             bg.Child = innerGrid;
 
-            _overlayRoot.Children.Add(_glowRing);
-            _overlayRoot.Children.Add(_bgCircle);
-            _overlayRoot.Children.Add(_progressArc);
             _overlayRoot.Children.Add(bg);
 
             PositionOverlay();
@@ -317,9 +273,6 @@ namespace capstoneOneShot.Services
                 _overlayCanvas.Children.Remove(_overlayRoot);
             }
             _overlayRoot = null;
-            _progressArc = null;
-            _bgCircle = null;
-            _glowRing = null;
             _labelText = null;
             _iconText = null;
             _overlayVisible = false;
@@ -339,56 +292,16 @@ namespace capstoneOneShot.Services
 
         private void UpdateOverlayProgress(float progress)
         {
-            if (_progressArc == null) return;
-
-            double filled = RingCircumference * progress;
-            double remaining = RingCircumference - filled;
-
-            _progressArc.StrokeDashArray = new DoubleCollection { filled, remaining };
-            _progressArc.InvalidateVisual();
-
             // Shift label text as user nears completion
             if (_labelText != null)
             {
                 _labelText.Text = progress >= 0.75f ? "Pausing…" : "Hold to pause";
             }
-
-            // Pulse the arc colour from cyan → white as progress increases
-            byte r = (byte)(77 + (178 * progress));
-            byte g = (byte)(208 - (8 * progress));
-            byte b = (byte)(225 - (10 * progress));
-            _progressArc.Stroke = new SolidColorBrush(Color.FromRgb(r, g, b));
         }
 
         private void PlayCompletionAnimation()
         {
             if (_overlayRoot == null) return;
-
-            // Flash arc to solid white
-            _progressArc?.BeginAnimation(Shape.StrokeProperty, null);
-            if (_progressArc != null)
-                _progressArc.Stroke = Brushes.White;
-
-            // Glow ring pulses out
-            if (_glowRing != null)
-            {
-                _glowRing.BeginAnimation(UIElement.OpacityProperty,
-                    new DoubleAnimationUsingKeyFrames
-                    {
-                        KeyFrames =
-                        {
-                            new EasingDoubleKeyFrame(0.9, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(0))),
-                            new EasingDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(500)))
-                        }
-                    });
-
-                _glowRing.BeginAnimation(FrameworkElement.WidthProperty,
-                    new DoubleAnimation(RingSize + 20, RingSize + 50,
-                        TimeSpan.FromMilliseconds(500)));
-                _glowRing.BeginAnimation(FrameworkElement.HeightProperty,
-                    new DoubleAnimation(RingSize + 20, RingSize + 50,
-                        TimeSpan.FromMilliseconds(500)));
-            }
 
             // Fade out the whole overlay after the flash
             _overlayRoot.BeginAnimation(UIElement.OpacityProperty,

@@ -177,7 +177,7 @@
                         CornerRadius="12"
                         Padding="24,14"
                         MinWidth="320"
-                        MaxWidth="600"
+                        MaxWidth="900"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Top"
                         Margin="0,16,0,0">
@@ -185,16 +185,16 @@
                         <!-- Header row -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
                             <TextBlock Text="&#xE81E;" FontFamily="Segoe MDL2 Assets"
-                                       Foreground="#64B5F6" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                       Foreground="#64B5F6" FontSize="21" VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="INSTRUCTION"
-                                       FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"
+                                       FontFamily="Segoe UI" FontWeight="Bold" FontSize="16"
                                        Foreground="#64B5F6" VerticalAlignment="Center"/>
                         </StackPanel>
                         <!-- Current instruction text -->
                         <TextBlock x:Name="CurrentInstructionLabel"
                                    Text=""
                                    FontFamily="Segoe UI"
-                                   FontSize="16"
+                                   FontSize="24"
                                    FontWeight="SemiBold"
                                    Foreground="#E8EDF2"
                                    TextWrapping="Wrap"
@@ -209,13 +209,13 @@
                                 Visibility="Collapsed">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets"
-                                           Foreground="#FF6B6B" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                           Foreground="#FF6B6B" FontSize="20" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBlock x:Name="CorrectionLabel"
                                            Text=""
-                                           FontFamily="Segoe UI" FontSize="13"
+                                           FontFamily="Segoe UI" FontSize="20"
                                            Foreground="#FFCDD2"
                                            TextWrapping="Wrap"
-                                           MaxWidth="500"/>
+                                           MaxWidth="750"/>
                             </StackPanel>
                         </Border>
                         <!-- All done banner -->
@@ -224,9 +224,9 @@
                                 Padding="12,8" Margin="0,8,0,0">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
-                                           Foreground="#4CAF50" FontSize="16" VerticalAlignment="Center"/>
+                                           Foreground="#4CAF50" FontSize="24" VerticalAlignment="Center"/>
                                 <TextBlock Text=" Pose achieved! Hold it."
-                                           FontFamily="Segoe UI" FontWeight="SemiBold" FontSize="13"
+                                           FontFamily="Segoe UI" FontWeight="SemiBold" FontSize="20"
                                            Foreground="#A5D6A7" Margin="6,0,0,0"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
@@ -251,15 +251,15 @@
                         BorderThickness="1"
                         CornerRadius="16"
                         Padding="12"
-                        Width="200"
-                        Height="240"
+                        Width="400"
+                        Height="480"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
                         Margin="0,0,20,20">
                     <Grid>
                         <!-- Label at top -->
                         <TextBlock Text="POSE REFERENCE"
-                                   FontSize="10"
+                                   FontSize="20"
                                    FontWeight="Bold"
                                    Foreground="#9E9E9E"
                                    HorizontalAlignment="Center"
@@ -268,10 +268,10 @@
                         <!-- Placeholder shown when no image is loaded -->
                         <StackPanel x:Name="PoseImagePlaceholder"
                                     HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="🧘" FontSize="48"
+                            <TextBlock Text="🧘" FontSize="96"
                                        HorizontalAlignment="Center" Margin="0,0,0,8"/>
                             <TextBlock Text="No image available"
-                                       Foreground="#555577" FontSize="12"
+                                       Foreground="#555577" FontSize="24"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
                         <!-- Actual pose reference image (set in code-behind) -->
@@ -314,7 +314,7 @@
                                     <TextBlock x:Name="PauseIcon" Text="⏸" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock x:Name="PauseTitleText" Text="PAUSED" FontSize="32" FontWeight="Bold" Foreground="#E8EDF2" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                <TextBlock x:Name="PauseDescriptionText" Text="Your session is paused." FontSize="13" Foreground="#6B7A8D" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,28"/>
+                                <TextBlock x:Name="PauseDescriptionText" Text="Your session is paused. Say 'Resume' to resume or hover over resume button." FontSize="13" Foreground="#6B7A8D" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,28"/>
                                 <!-- Actions -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
                                     <!-- Continue Button -->
@@ -351,10 +351,6 @@
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
-                                <!-- Gesture hint -->
-                                <Border BorderBrush="#0FFFFFFF" BorderThickness="0,1,0,0" Margin="0,22,0,0" Padding="0,18,0,0">
-                                    <TextBlock x:Name="PauseGestureHint" Text="✕  Cross arms again to resume" FontSize="11" Foreground="#3D4A5A" HorizontalAlignment="Center"/>
-                                </Border>
                             </StackPanel>
                         </Border>
                     </Grid>

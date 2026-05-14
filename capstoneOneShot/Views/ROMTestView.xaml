@@ -196,7 +196,7 @@
                         CornerRadius="12"
                         Padding="24,14"
                         MinWidth="320"
-                        MaxWidth="620"
+                        MaxWidth="930"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Top"
                         Margin="0,16,0,0"
@@ -205,22 +205,22 @@
                         <!-- Header row -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
                             <TextBlock Text="&#xE81E;" FontFamily="Segoe MDL2 Assets"
-                                       Foreground="#64B5F6" FontSize="14"
+                                       Foreground="#64B5F6" FontSize="21"
                                        VerticalAlignment="Center" Margin="0,0,6,0"/>
                             <TextBlock Text="INSTRUCTION"
-                                       FontFamily="Segoe UI" FontWeight="Bold" FontSize="11"
+                                       FontFamily="Segoe UI" FontWeight="Bold" FontSize="16"
                                        Foreground="#64B5F6" VerticalAlignment="Center"/>
                         </StackPanel>
                         <!-- Main instruction text -->
                         <TextBlock x:Name="InstructionLabel"
                                    Text="Raise both arms as high as you can overhead"
-                                   FontFamily="Segoe UI" FontSize="16" FontWeight="SemiBold"
+                                   FontFamily="Segoe UI" FontSize="24" FontWeight="SemiBold"
                                    Foreground="#E8EDF2" TextWrapping="Wrap"
                                    TextAlignment="Center" HorizontalAlignment="Center"/>
                         <!-- Sub instruction -->
                         <TextBlock x:Name="InstructionSubLabel"
                                    Text="Hold at your maximum range and keep still"
-                                   FontFamily="Segoe UI" FontSize="12"
+                                   FontFamily="Segoe UI" FontSize="18"
                                    Foreground="#6B7A8D" TextAlignment="Center"
                                    HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
@@ -334,15 +334,15 @@
                         BorderThickness="1"
                         CornerRadius="16"
                         Padding="12"
-                        Width="200"
-                        Height="240"
+                        Width="400"
+                        Height="480"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
                         Margin="0,0,20,20">
                     <Grid>
                         <!-- Label at top -->
                         <TextBlock Text="TEST REFERENCE"
-                                   FontSize="10"
+                                   FontSize="20"
                                    FontWeight="Bold"
                                    Foreground="#9E9E9E"
                                    HorizontalAlignment="Center"
@@ -460,8 +460,8 @@
                                 <!-- Gesture hint -->
                                 <Border BorderBrush="#0FFFFFFF" BorderThickness="0,1,0,0"
                                         Margin="0,22,0,0" Padding="0,18,0,0">
-                                    <TextBlock x:Name="PauseGestureHint" Text="✕  Raise hands again to resume"
-                                               FontSize="11" Foreground="#3D4A5A"
+                                    <TextBlock x:Name="PauseGestureHint" Text="Hover over Resume button to resume"
+                                               FontSize="16" Foreground="#9CA3AF"
                                                HorizontalAlignment="Center"/>
                                 </Border>
                             </StackPanel>

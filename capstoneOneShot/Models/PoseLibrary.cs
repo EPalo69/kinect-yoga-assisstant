@@ -184,7 +184,7 @@ namespace capstoneOneShot.Models
             {
                 new PoseDefinition
                 {
-                    Name          = "Tree Pose (Overhead)",
+                    Name          = "Tree Pose",
                     Description   = "Stand on one leg with the other foot resting on the inner thigh, hands raised high above your head.",
                     BriefInfo     = "Improves balance and focus while stretching your shoulders and arms overhead.",
                     Difficulty    = DifficultyLevel.Intermediate,

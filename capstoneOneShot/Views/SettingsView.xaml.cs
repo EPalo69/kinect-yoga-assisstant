@@ -19,6 +19,9 @@ namespace capstoneOneShot.Views
 
             // Load settings
             KinectBypassToggle.IsChecked = Properties.Settings.Default.KinectBypass;
+            HideSkeletonToggle.IsChecked = Properties.Settings.Default.HideSkeleton;
+
+            PopulateAudioDevices();
 
             // Opacity fade-in
             this.Opacity = 0;
@@ -106,13 +109,68 @@ namespace capstoneOneShot.Views
             return new Point(x, y);
         }
 
-        private void KinectBypassToggle_Changed(object sender, RoutedEventArgs e)
+        private void PopulateAudioDevices()
         {
-            if (KinectBypassToggle.IsChecked.HasValue)
+            // Populate Output Devices
+            AudioOutputCombo.Items.Clear();
+            AudioOutputCombo.Items.Add("System Default");
+            for (int i = 0; i < NAudio.Wave.WaveOut.DeviceCount; i++)
             {
-                Properties.Settings.Default.KinectBypass = KinectBypassToggle.IsChecked.Value;
-                Properties.Settings.Default.Save();
+                var caps = NAudio.Wave.WaveOut.GetCapabilities(i);
+                AudioOutputCombo.Items.Add(caps.ProductName);
             }
+
+            // Select current or default
+            string currentOut = Properties.Settings.Default.AudioOutputDevice;
+            if (string.IsNullOrEmpty(currentOut) || !AudioOutputCombo.Items.Contains(currentOut))
+                AudioOutputCombo.SelectedIndex = 0;
+            else
+                AudioOutputCombo.SelectedItem = currentOut;
+
+            // Populate Input Devices
+            AudioInputCombo.Items.Clear();
+            AudioInputCombo.Items.Add("System Default");
+            for (int i = 0; i < NAudio.Wave.WaveIn.DeviceCount; i++)
+            {
+                var caps = NAudio.Wave.WaveIn.GetCapabilities(i);
+                AudioInputCombo.Items.Add(caps.ProductName);
+            }
+
+            // Select current or default
+            string currentIn = Properties.Settings.Default.AudioInputDevice;
+            if (string.IsNullOrEmpty(currentIn) || !AudioInputCombo.Items.Contains(currentIn))
+                AudioInputCombo.SelectedIndex = 0;
+            else
+                AudioInputCombo.SelectedItem = currentIn;
+        }
+
+        private void Setting_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!this.IsLoaded) return; // Prevent saving while initializing
+
+            if (KinectBypassToggle.IsChecked.HasValue)
+                Properties.Settings.Default.KinectBypass = KinectBypassToggle.IsChecked.Value;
+            
+            if (HideSkeletonToggle.IsChecked.HasValue)
+                Properties.Settings.Default.HideSkeleton = HideSkeletonToggle.IsChecked.Value;
+
+            Properties.Settings.Default.Save();
+        }
+
+        private void AudioOutputCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!this.IsLoaded || AudioOutputCombo.SelectedItem == null) return;
+            string selected = AudioOutputCombo.SelectedItem.ToString();
+            Properties.Settings.Default.AudioOutputDevice = selected == "System Default" ? "" : selected;
+            Properties.Settings.Default.Save();
+        }
+
+        private void AudioInputCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!this.IsLoaded || AudioInputCombo.SelectedItem == null) return;
+            string selected = AudioInputCombo.SelectedItem.ToString();
+            Properties.Settings.Default.AudioInputDevice = selected == "System Default" ? "" : selected;
+            Properties.Settings.Default.Save();
         }
 
         private void Btn_ReturnMenu_Click(object sender, RoutedEventArgs e)

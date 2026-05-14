@@ -230,15 +230,17 @@ namespace capstoneOneShot.Views
         {
             if (!string.IsNullOrEmpty(imageFileName))
             {
-                var path = System.IO.Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory, "Assets", "Poses", imageFileName);
-
-                if (System.IO.File.Exists(path))
+                try
                 {
-                    PoseReferenceImage.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(path));
+                    string uri = "pack://application:,,,/Assets/Poses/" + imageFileName;
+                    PoseReferenceImage.Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(uri, UriKind.Absolute));
                     PoseReferenceImage.Visibility = Visibility.Visible;
                     PoseImagePlaceholder.Visibility = Visibility.Collapsed;
                     return;
+                }
+                catch
+                {
+                    // Fall back to showing placeholder
                 }
             }
 
@@ -548,6 +550,8 @@ namespace capstoneOneShot.Views
         {
             SkeletonCanvas.Children.Clear();
 
+            if (Properties.Settings.Default.HideSkeleton) return;
+
             // ★ Build a fast lookup of failing joint names
             var failingJoints = new HashSet<string>(
                 result.JointDeviations
@@ -717,7 +721,6 @@ namespace capstoneOneShot.Views
 
             ResumeButton.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
             SelectionButton.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
-            PauseGestureHint.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
 
             PauseOverlay.Visibility = Visibility.Visible;
             PauseOverlay.UpdateLayout();

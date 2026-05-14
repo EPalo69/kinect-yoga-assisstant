@@ -356,7 +356,7 @@
         <!-- ── Footer hint ── -->
         <TextBlock x:Name="FooterHint" Grid.Row="2"
                    Text="Auto-proceeds in 8s  •  Hover over Proceed to speed up"
-                   Foreground="#2D3748" FontSize="12"
+                   Foreground="#9CA3AF" FontSize="20"
                    HorizontalAlignment="Center"
                    Margin="0,6,0,16"/>
 

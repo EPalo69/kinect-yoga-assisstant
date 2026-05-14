@@ -429,6 +429,8 @@ namespace capstoneOneShot.Views
         {
             SkeletonCanvas.Children.Clear();
 
+            if (Properties.Settings.Default.HideSkeleton) return;
+
             var bones = new[]
             {
                 (JointType.Head,           JointType.ShoulderCenter),

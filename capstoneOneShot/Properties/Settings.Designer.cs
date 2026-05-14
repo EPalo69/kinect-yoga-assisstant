@@ -38,5 +38,41 @@ namespace capstoneOneShot.Properties
                 this["KinectBypass"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool HideSkeleton {
+            get {
+                return ((bool)(this["HideSkeleton"]));
+            }
+            set {
+                this["HideSkeleton"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string AudioOutputDevice {
+            get {
+                return ((string)(this["AudioOutputDevice"]));
+            }
+            set {
+                this["AudioOutputDevice"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string AudioInputDevice {
+            get {
+                return ((string)(this["AudioInputDevice"]));
+            }
+            set {
+                this["AudioInputDevice"] = value;
+            }
+        }
     }
 }

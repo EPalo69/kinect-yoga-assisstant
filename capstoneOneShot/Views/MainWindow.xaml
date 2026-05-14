@@ -176,7 +176,7 @@
             <!-- Footer -->
             <TextBlock Grid.Row="2"
                        Text="Hover your hand over a button to select  •  Hold to confirm"
-                       Foreground="#374151" FontSize="12"
+                       Foreground="#9CA3AF" FontSize="20"
                        HorizontalAlignment="Center" Margin="0,0,0,24"/>
         </Grid>
 
