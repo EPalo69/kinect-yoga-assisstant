@@ -248,6 +248,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="installer\setup.iss" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -320,6 +321,7 @@
     <Content Include="Assets\Audio\instructions\tree-pose\tree_3.wav" />
     <Content Include="Assets\Audio\instructions\tree-pose\tree_4.wav" />
     <Content Include="Assets\Audio\instructions\tree-pose\tree_5.wav" />
+    <Content Include="installer\redist\KinectRuntime-v1.8-Setup.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\CommunityToolkit.Mvvm.8.3.2\build\CommunityToolkit.Mvvm.targets" Condition="Exists('..\packages\CommunityToolkit.Mvvm.8.3.2\build\CommunityToolkit.Mvvm.targets')" />

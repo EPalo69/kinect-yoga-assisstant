@@ -742,6 +742,7 @@ namespace capstoneOneShot.Views
                 _pointerService.RegisterButton(SelectionButton, circ, () => Dispatcher.Invoke(() => SelectionButton_Click(null, null)));
             }
             _pointerService.RegisterButton(EndSessionButton, circ, () => Dispatcher.Invoke(() => EndSessionButton_Click(null, null)));
+            _pointerService.RegisterButton(DebugWinButton, circ, () => Dispatcher.Invoke(() => DebugWinButton_Click(null, null)));
 
             _pointerService.BringCursorToFront();
             _pointerService.Start();
@@ -827,6 +828,24 @@ namespace capstoneOneShot.Views
             Application.Current.MainWindow.Show();
             UnhookKinect();
             Close();
+        }
+
+        private void DebugWinButton_Click(object sender, RoutedEventArgs e)
+        {
+            _isPaused = false;
+            PauseOverlay.Visibility = Visibility.Collapsed;
+
+            _kinectManager.SkeletonFrameReady -= OnPauseSkeletonFrame;
+            _pointerService?.Stop();
+            _pointerService?.ClearButtons();
+            _pointerService = null;
+
+            // Fake a perfect score and force advance
+            _bestScore = 100;
+            _frameScores.Add(100);
+            _holdSeconds = _currentPose?.HoldSeconds ?? 10;
+            
+            AdvancePose();
         }
 
         private void EndSession()

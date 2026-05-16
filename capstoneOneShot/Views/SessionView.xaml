@@ -350,6 +350,17 @@
                                             <TextBlock Text="Main Menu" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </Grid>
+                                    <!-- Debug Win Button -->
+                                    <Grid x:Name="DebugWinButton" Width="160" Height="160" Margin="15,0" Cursor="Hand" MouseLeftButtonUp="DebugWinButton_Click">
+                                        <Ellipse Stroke="#A855F7" StrokeThickness="2" Fill="#111827"/>
+                                        <Ellipse x:Name="Progress_DebugWin" Stroke="#A855F7" StrokeThickness="4" Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1" RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="★" FontSize="36" Foreground="#A855F7" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock Text="Force Win" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

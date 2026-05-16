@@ -28,11 +28,22 @@ namespace capstoneOneShot.Views
         private int _holdSeconds;
         private int _totalSessionSeconds;
 
+        private PointerSelectionService _pointerService;
+
         public SessionResultsView(KinectManager kinectManager, PoseDefinition pose)
         {
             InitializeComponent();
             _kinectManager = kinectManager;
             _pose = pose;
+            
+            // Set up pointer service for the new ellipse buttons
+            _pointerService = new PointerSelectionService(CursorCanvas);
+            const double circ = 628; // 200 * Pi
+            _pointerService.RegisterButton(PracticeAgainButton, circ, () => Dispatcher.Invoke(() => PracticeAgain_Click(null, null)));
+            _pointerService.RegisterButton(NewPoseButton, circ, () => Dispatcher.Invoke(() => NewPose_Click(null, null)));
+            _pointerService.RegisterButton(MainMenuButton, circ, () => Dispatcher.Invoke(() => MainMenu_Click(null, null)));
+
+            _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
         }
 
         public void SetResults(double averageAccuracy, double bestScore, int holdSeconds, int totalSessionSeconds)
@@ -40,8 +51,50 @@ namespace capstoneOneShot.Views
             _averageAccuracy = averageAccuracy;
             _bestScore = bestScore;
             _holdSeconds = holdSeconds;
-            _totalSessionSeconds = totalSessionSeconds; // ★
-            Loaded += (s, e) => PopulateUI();
+            _totalSessionSeconds = totalSessionSeconds;
+            Loaded += (s, e) => 
+            {
+                PopulateUI();
+                _pointerService.Start();
+                _pointerService.BringCursorToFront();
+                _pointerService.ResetPosition();
+            };
+        }
+
+        private void OnSkeletonFrameReady(Microsoft.Kinect.Skeleton[] skeletons)
+        {
+            if (_pointerService == null) return;
+            if (skeletons == null || skeletons.Length == 0) return;
+
+            var skeleton = skeletons.FirstOrDefault(s => s.TrackingState == Microsoft.Kinect.SkeletonTrackingState.Tracked);
+            if (skeleton == null)
+            {
+                Dispatcher.Invoke(() => _pointerService.ProcessHandPosition(new Point(), false));
+                return;
+            }
+
+            var leftHand = skeleton.Joints[Microsoft.Kinect.JointType.HandLeft];
+            var rightHand = skeleton.Joints[Microsoft.Kinect.JointType.HandRight];
+            var activeHand = leftHand.Position.Y > rightHand.Position.Y ? leftHand : rightHand;
+            bool tracked = activeHand.TrackingState == Microsoft.Kinect.JointTrackingState.Tracked;
+
+            Dispatcher.Invoke(() =>
+            {
+                if (!tracked)
+                {
+                    _pointerService.ProcessHandPosition(new Point(), false);
+                    return;
+                }
+
+                // Map to screen
+                double screenW = SystemParameters.PrimaryScreenWidth;
+                double screenH = SystemParameters.PrimaryScreenHeight;
+                
+                double x = (activeHand.Position.X + 1.0) / 2.0 * screenW;
+                double y = (1.0 - (activeHand.Position.Y + 1.0) / 2.0) * screenH;
+
+                _pointerService.ProcessHandPosition(new Point(x, y), true);
+            });
         }
 
         private void PopulateUI()
@@ -79,8 +132,17 @@ namespace capstoneOneShot.Views
             }
         }
 
+        private void Cleanup()
+        {
+            _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
+            _pointerService?.Stop();
+            _pointerService?.ClearButtons();
+            _pointerService = null;
+        }
+
         private void PracticeAgain_Click(object sender, RoutedEventArgs e)
         {
+            Cleanup();
             var session = new SessionView(_kinectManager, _pose);
             session.Show();
             Close();
@@ -88,6 +150,7 @@ namespace capstoneOneShot.Views
 
         private void NewPose_Click(object sender, RoutedEventArgs e)
         {
+            Cleanup();
             var selection = new PoseSelectionView(_kinectManager);
             selection.Show();
             Close();
@@ -95,8 +158,15 @@ namespace capstoneOneShot.Views
 
         private void MainMenu_Click(object sender, RoutedEventArgs e)
         {
+            Cleanup();
             Application.Current.MainWindow.Show();
             Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            Cleanup();
+            base.OnClosed(e);
         }
     }
 }
