@@ -287,6 +287,9 @@
   </ItemGroup>
   <ItemGroup>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 681d108 (fix(trans): made the transition more smealess)
     <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\bend_left_arm.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -392,6 +395,7 @@
     <Content Include="Assets\Audio\instructions\tree-pose\tree_5.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+<<<<<<< HEAD
 =======
     <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\bend_left_arm.wav" />
     <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\bend_right_arm.wav" />
@@ -429,6 +433,8 @@
     <Content Include="Assets\Audio\instructions\tree-pose\tree_4.wav" />
     <Content Include="Assets\Audio\instructions\tree-pose\tree_5.wav" />
 >>>>>>> a788163 (feat(app): added installer)
+=======
+>>>>>>> 681d108 (fix(trans): made the transition more smealess)
     <Content Include="installer\redist\KinectRuntime-v1.8-Setup.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
