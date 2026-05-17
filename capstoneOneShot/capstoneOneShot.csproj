@@ -286,41 +286,111 @@
     <Resource Include="Assets\ROM\wide-squat.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\bend_left_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\bend_right_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\lower_left_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\lower_right_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\raise_left_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\raise_right_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\relax_left_shoulder.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\relax_right_shoulder.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\straighten_left_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\straighten_right_arm.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\core-hips\engage_core.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\core-hips\keep_hips_neutral.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\core-hips\straighten_back.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\legs-knees\bend_left_leg.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\legs-knees\bend_right_leg.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\legs-knees\straighten_left_leg.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\legs-knees\straighten_right_leg.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\wrists\straighten_left_wrist.wav" />
-    <Content Include="Assets\Audio\corrective-feedback\wrists\straighten_right_wrist.wav" />
-    <Content Include="Assets\Audio\general-session\good_hold.wav" />
-    <Content Include="Assets\Audio\general-session\great_hold.wav" />
-    <Content Include="Assets\Audio\general-session\kinect_disconnected.wav" />
-    <Content Include="Assets\Audio\general-session\lost_user.wav" />
-    <Content Include="Assets\Audio\general-session\session_complete.wav" />
-    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_1.wav" />
-    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_2.wav" />
-    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_3.wav" />
-    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_4.wav" />
-    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_5.wav" />
-    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_6.wav" />
-    <Content Include="Assets\Audio\instructions\tree-pose\tree_1.wav" />
-    <Content Include="Assets\Audio\instructions\tree-pose\tree_2.wav" />
-    <Content Include="Assets\Audio\instructions\tree-pose\tree_3.wav" />
-    <Content Include="Assets\Audio\instructions\tree-pose\tree_4.wav" />
-    <Content Include="Assets\Audio\instructions\tree-pose\tree_5.wav" />
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\bend_left_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\bend_right_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\lower_left_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\lower_right_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\raise_left_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\raise_right_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\relax_left_shoulder.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\relax_right_shoulder.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\straighten_left_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\arms-shoulders\straighten_right_arm.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\core-hips\engage_core.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\core-hips\keep_hips_neutral.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\core-hips\straighten_back.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\legs-knees\bend_left_leg.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\legs-knees\bend_right_leg.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\legs-knees\straighten_left_leg.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\legs-knees\straighten_right_leg.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\wrists\straighten_left_wrist.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\corrective-feedback\wrists\straighten_right_wrist.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\general-session\good_hold.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\general-session\great_hold.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\general-session\kinect_disconnected.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\general-session\lost_user.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\general-session\session_complete.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_1.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_2.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_3.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_4.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_5.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\mountain-pose\mountain_6.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\tree-pose\tree_1.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\tree-pose\tree_2.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\tree-pose\tree_3.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\tree-pose\tree_4.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Audio\instructions\tree-pose\tree_5.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="installer\redist\KinectRuntime-v1.8-Setup.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -59,6 +59,7 @@ namespace capstoneOneShot.Views
                 // Register static buttons
                 _pointerService.RegisterButton(Btn_Back, Math.PI * 150, () => BackButton_Click(null, null));
 
+                _kinectManager.ConnectionStatusChanged += OnConnectionStatusChanged;
                 _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
                 _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
 
@@ -190,6 +191,7 @@ namespace capstoneOneShot.Views
 
         protected override void OnClosed(EventArgs e)
         {
+            _kinectManager.ConnectionStatusChanged -= OnConnectionStatusChanged;
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  -= OnBodyStatusChanged;
             _pointerService?.Stop();
@@ -199,14 +201,19 @@ namespace capstoneOneShot.Views
         // ── Status pills ──────────────────────────────────────────────────
         private void InitStatusPills()
         {
-            // Kinect pill — check whether hardware was actually found and started
-            bool kinectOk = _kinectManager.IsConnected;
-            PillKinectDot.Fill   = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(239,68,68));
-            PillKinectLabel.Text = kinectOk ? "Kinect Connected" : "Kinect Not Connected";
-            PillKinectLabel.Foreground = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(156,163,175));
-
-            // ROM pill
+            // Set initial state
+            OnConnectionStatusChanged(_kinectManager.IsConnected);
             UpdateROMPill();
+        }
+
+        private void OnConnectionStatusChanged(bool connected)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                PillKinectDot.Fill   = new SolidColorBrush(connected ? Color.FromRgb(34,197,94) : Color.FromRgb(239,68,68));
+                PillKinectLabel.Text = connected ? "Kinect Connected" : "Kinect Not Connected";
+                PillKinectLabel.Foreground = new SolidColorBrush(connected ? Color.FromRgb(34,197,94) : Color.FromRgb(156,163,175));
+            });
         }
 
         private void OnBodyStatusChanged(BodyDetectionStatus status)

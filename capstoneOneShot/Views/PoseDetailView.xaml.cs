@@ -95,6 +95,7 @@ namespace capstoneOneShot.Views
                 _proceedTimer.Start();
             }
 
+            _kinectManager.ConnectionStatusChanged += OnConnectionStatusChanged;
             _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  += OnBodyStatusChanged;
             _pointerService.BringCursorToFront();
@@ -310,6 +311,7 @@ namespace capstoneOneShot.Views
         protected override void OnClosed(EventArgs e)
         {
             _proceedTimer?.Stop();
+            _kinectManager.ConnectionStatusChanged -= OnConnectionStatusChanged;
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  -= OnBodyStatusChanged;
             _pointerService?.Stop();
@@ -319,11 +321,18 @@ namespace capstoneOneShot.Views
         // ── Status pill helpers ─────────────────────────────────────────────────
         private void InitStatusPills()
         {
-            bool kinectOk = _kinectManager.IsConnected;
-            PillKinectDot.Fill   = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(239,68,68));
-            PillKinectLabel.Text = kinectOk ? "Kinect Connected" : "Kinect Not Connected";
-            PillKinectLabel.Foreground = new SolidColorBrush(kinectOk ? Color.FromRgb(34,197,94) : Color.FromRgb(156,163,175));
+            OnConnectionStatusChanged(_kinectManager.IsConnected);
             UpdateROMPill();
+        }
+
+        private void OnConnectionStatusChanged(bool connected)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                PillKinectDot.Fill   = new SolidColorBrush(connected ? Color.FromRgb(34,197,94) : Color.FromRgb(239,68,68));
+                PillKinectLabel.Text = connected ? "Kinect Connected" : "Kinect Not Connected";
+                PillKinectLabel.Foreground = new SolidColorBrush(connected ? Color.FromRgb(34,197,94) : Color.FromRgb(156,163,175));
+            });
         }
 
         private void OnBodyStatusChanged(BodyDetectionStatus status)

@@ -21,6 +21,7 @@ OutputBaseFilename={#AppName}_Setup_v{#AppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+PrivilegesRequired=admin
 
 ; Minimum Windows version (Windows 7 = 6.1)
 MinVersion=6.1
@@ -36,7 +37,7 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Source: "{#AppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 ; --- Kinect Runtime redistributable (extracted to temp, deleted after install) ---
-Source: "{#RedistDir}\KinectRuntime-v1.8-Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "{#RedistDir}\KinectRuntime-v1.8-Setup.exe"; DestDir: "{tmp}";
 
 [Icons]
 Name: "{group}\{#AppName}";          Filename: "{app}\{#AppExeName}"
@@ -49,7 +50,7 @@ Filename: "{tmp}\KinectRuntime-v1.8-Setup.exe"; \
   Parameters: "/passive /norestart"; \
   StatusMsg: "Installing Kinect for Windows Runtime v1.8..."; \
   Check: KinectRuntimeNotInstalled; \
-  Flags: waituntilterminated
+  Flags: waituntilterminated runascurrentuser
   
 ; --- Launch app after install (optional) ---
 Filename: "{app}\{#AppExeName}"; \

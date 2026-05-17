@@ -11,43 +11,64 @@ namespace capstoneOneShot.Services
         /// </summary>
         public static void ApplyFadeInTransition(Window window)
         {
-            window.Opacity = 0;
             window.IsVisibleChanged += (s, e) =>
             {
-                if (window.IsVisible)
+                if (window.IsVisible && window.Content is UIElement content)
                 {
+                    // If content is already fully visible and we just initialized, animate it
+                    content.Opacity = 0;
                     var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250));
-                    window.BeginAnimation(UIElement.OpacityProperty, anim);
+                    content.BeginAnimation(UIElement.OpacityProperty, anim);
                 }
             };
         }
 
         /// <summary>
-        /// Fades the window out and then invokes an action (like opening another window), then Closes it.
+        /// Fades the window content out and then invokes an action (like opening another window), then Closes it.
         /// </summary>
         public static void FadeOutAndClose(Window window, Action nextAction = null)
         {
-            var anim = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
-            anim.Completed += (s, e) =>
+            if (window.Content is UIElement content)
+            {
+                var anim = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
+                anim.Completed += (s, e) =>
+                {
+                    nextAction?.Invoke();
+                    window.Close();
+                };
+                content.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+            else
             {
                 nextAction?.Invoke();
                 window.Close();
-            };
-            window.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
         }
 
         /// <summary>
-        /// Fades the window out and then invokes an action (like opening another window), then Hides it.
+        /// Fades the window content out and then invokes an action (like opening another window), then Hides it.
         /// </summary>
         public static void FadeOutAndHide(Window window, Action nextAction = null)
         {
-            var anim = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
-            anim.Completed += (s, e) =>
+            if (window.Content is UIElement content)
+            {
+                var anim = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
+                anim.Completed += (s, e) =>
+                {
+                    nextAction?.Invoke();
+                    window.Hide();
+                    
+                    // Reset content opacity so it's visible if the window is shown again
+                    content.BeginAnimation(UIElement.OpacityProperty, null);
+                    content.Opacity = 1;
+                };
+                content.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
+            else
             {
                 nextAction?.Invoke();
                 window.Hide();
-            };
-            window.BeginAnimation(UIElement.OpacityProperty, anim);
+            }
         }
     }
 }

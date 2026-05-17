@@ -28,7 +28,7 @@
     <!-- Root grid: status bar + top content + bottom footer -->
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40"/>  <!-- Status bar -->
+            <RowDefinition Height="60"/>  <!-- Status bar -->
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -40,28 +40,28 @@
                 BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                         VerticalAlignment="Center" Margin="0,0,20,0">
-                <Border Background="#111827" CornerRadius="20" Padding="12,4" Margin="0,0,6,0">
+                <Border Background="#111827" CornerRadius="30" Padding="24,9" Margin="0,0,15,0">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse x:Name="PillKinectDot" Width="7" Height="7" Fill="#EF4444"
-                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Ellipse x:Name="PillKinectDot" Width="12" Height="12" Fill="#EF4444"
+                                 VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock x:Name="PillKinectLabel" Text="Kinect Not Connected"
-                                   Foreground="#9CA3AF" FontSize="11"/>
+                                   Foreground="#9CA3AF" FontSize="18"/>
                     </StackPanel>
                 </Border>
-                <Border Background="#111827" CornerRadius="20" Padding="12,4" Margin="0,0,6,0">
+                <Border Background="#111827" CornerRadius="30" Padding="24,9" Margin="0,0,15,0">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse x:Name="PillBodyDot" Width="7" Height="7" Fill="#EF4444"
-                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Ellipse x:Name="PillBodyDot" Width="12" Height="12" Fill="#EF4444"
+                                 VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock x:Name="PillBodyLabel" Text="No Body Detected"
-                                   Foreground="#9CA3AF" FontSize="11"/>
+                                   Foreground="#9CA3AF" FontSize="18"/>
                     </StackPanel>
                 </Border>
-                <Border Background="#111827" CornerRadius="20" Padding="12,4">
+                <Border Background="#111827" CornerRadius="30" Padding="24,9">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse x:Name="PillROMDot" Width="7" Height="7" Fill="#EF4444"
-                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <Ellipse x:Name="PillROMDot" Width="12" Height="12" Fill="#EF4444"
+                                 VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock x:Name="PillROMLabel" Text="ROM Not Loaded"
-                                   Foreground="#9CA3AF" FontSize="11"/>
+                                   Foreground="#9CA3AF" FontSize="18"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

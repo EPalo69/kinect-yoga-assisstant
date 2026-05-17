@@ -161,21 +161,36 @@ namespace capstoneOneShot.Views
                 }
             };
 
-            _kinectCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            _kinectCheckTimer.Tick += (s, e) =>
-            {
-                if (!Properties.Settings.Default.KinectBypass && !_kinectManager.IsConnected)
-                {
-                    _kinectCheckTimer.Stop();
-                    PauseIcon.Text = "⚠";
-                    PausePoseImage.Visibility = Visibility.Collapsed;
-                    TriggerPause("KINECT DISCONNECTED", "Your Kinect sensor has been disconnected. Return to Main Menu.", false);
-                }
-            };
-            _kinectCheckTimer.Start();
+            _kinectManager.ConnectionStatusChanged += OnConnectionStatusChanged;
 
             LoadCurrentTest();
             Loaded += (s, e) => InitStatusPills();
+        }
+
+        private void OnConnectionStatusChanged(bool connected)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                PillKinectDot.Fill = new SolidColorBrush(connected ? Color.FromRgb(34, 197, 94) : Color.FromRgb(239, 68, 68));
+                PillKinectLabel.Text = connected ? "Kinect Connected" : "Kinect Not Connected";
+                PillKinectLabel.Foreground = new SolidColorBrush(connected ? Color.FromRgb(34, 197, 94) : Color.FromRgb(156, 163, 175));
+
+                if (!Properties.Settings.Default.KinectBypass)
+                {
+                    if (!connected)
+                    {
+                        PauseIcon.Text = "⚠";
+                        PausePoseImage.Visibility = Visibility.Collapsed;
+                        TriggerPause("KINECT DISCONNECTED", "Your Kinect sensor has been disconnected. Please plug it back in to resume.", false);
+                    }
+                    else if (_isPaused)
+                    {
+                        PauseTitleText.Text = "KINECT RECONNECTED";
+                        PauseDescriptionText.Text = "Sensor detected. You may now resume.";
+                        ResumeButton.Visibility = Visibility.Visible;
+                    }
+                }
+            });
         }
 
         // ── Load current test ────────────────────────────────────────────────
@@ -936,12 +951,12 @@ namespace capstoneOneShot.Views
         {
             _countdownTimer?.Stop();
             _bodyLostTimer?.Stop();
-            _kinectCheckTimer?.Stop();
             _kinectManager.ColorFrameReady   -= OnColorFrameReady;
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged  -= OnBodyStatusChanged;
             _kinectManager.SkeletonFrameReady -= OnPauseSkeletonFrame;
             _kinectManager.VoiceCommandHeard  -= OnVoiceCommandHeard;
+            _kinectManager.ConnectionStatusChanged -= OnConnectionStatusChanged;
             if (_pauseService != null)
             {
                 _pauseService.Disable();

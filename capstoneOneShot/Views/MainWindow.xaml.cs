@@ -171,24 +171,38 @@ namespace capstoneOneShot.Views
         private void StartKinect()
         {
             _kinectManager = new KinectManager();
-            bool connected = _kinectManager.Initialize();
+            _kinectManager.ConnectionStatusChanged += OnConnectionStatusChanged;
+            _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
+            _kinectManager.BodyStatusChanged += OnBodyStatusChanged;
 
-            if (connected)
-            {
-                KinectStatusDot.Fill = new SolidColorBrush(Color.FromRgb(34, 197, 94));
-                KinectStatusLabel.Text = "Kinect Connected";
-                KinectStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
-                _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
-                _kinectManager.BodyStatusChanged += OnBodyStatusChanged;
-            }
-            else
-            {
-                KinectStatusLabel.Text = "Kinect Not Connected";
-            }
+            bool connected = _kinectManager.Initialize();
+            OnConnectionStatusChanged(connected);
 
             _pointerService.Start();
-
             UpdateROMPill();
+        }
+
+        private void OnConnectionStatusChanged(bool connected)
+        {
+            if (!this.IsVisible) return;
+            Dispatcher.Invoke(() =>
+            {
+                if (connected)
+                {
+                    KinectStatusDot.Fill = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                    KinectStatusLabel.Text = "Kinect Connected";
+                    KinectStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                }
+                else
+                {
+                    KinectStatusDot.Fill = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                    KinectStatusLabel.Text = "Kinect Not Connected";
+                    KinectStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+                    
+                    // Reset body pill to default state when Kinect disconnects
+                    OnBodyStatusChanged(BodyDetectionStatus.NotDetected);
+                }
+            });
         }
 
         // ── Body status pill ─────────────────────────────────────────────

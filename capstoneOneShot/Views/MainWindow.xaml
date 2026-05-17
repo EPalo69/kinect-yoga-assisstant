@@ -23,41 +23,41 @@
                 <!-- Footer -->
             </Grid.RowDefinitions>
 
-            <!-- Title + pills -->
+            <!-- Title -->
             <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,48,0,0">
                 <TextBlock Text="YAMAS" FontSize="52" FontWeight="Bold"
                            Foreground="White" HorizontalAlignment="Center"/>
-                <TextBlock Text="KINECT YOGA ASSISTANT" FontSize="14" FontWeight="Light"
+                <TextBlock Text="Yoga Alignment and Movement Assistance System" FontSize="14" FontWeight="Light"
                            Foreground="#4DD0E1" HorizontalAlignment="Center"
                            Margin="0,4,0,0"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                            Margin="0,20,0,0">
-                    <Border Background="#111827" CornerRadius="20"
-                            Padding="16,6" Margin="0,0,10,0">
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse x:Name="KinectStatusDot" Width="8" Height="8"
-                                     Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock x:Name="KinectStatusLabel" Text="Kinect Not Connected"
-                                       Foreground="#9CA3AF" FontSize="12"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Background="#111827" CornerRadius="20" Padding="16,6" Margin="0,0,10,0">
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse x:Name="BodyStatusDot" Width="8" Height="8"
-                                     Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock x:Name="BodyStatusLabel" Text="No Body Detected"
-                                       Foreground="#9CA3AF" FontSize="12"/>
-                        </StackPanel>
-                    </Border>
-                    <Border Background="#111827" CornerRadius="20" Padding="16,6">
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse x:Name="ROMStatusDot" Width="8" Height="8"
-                                     Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock x:Name="ROMStatusLabel" Text="ROM Not Loaded"
-                                       Foreground="#9CA3AF" FontSize="12"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+            </StackPanel>
+
+            <!-- Status pills (top right) -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,20,20,0" Panel.ZIndex="100">
+                <Border Background="#111827" CornerRadius="30" Padding="24,9" Margin="0,0,15,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="KinectStatusDot" Width="12" Height="12"
+                                 Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="KinectStatusLabel" Text="Kinect Not Connected"
+                                   Foreground="#9CA3AF" FontSize="18"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#111827" CornerRadius="30" Padding="24,9" Margin="0,0,15,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="BodyStatusDot" Width="12" Height="12"
+                                 Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="BodyStatusLabel" Text="No Body Detected"
+                                   Foreground="#9CA3AF" FontSize="18"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="#111827" CornerRadius="30" Padding="24,9">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="ROMStatusDot" Width="12" Height="12"
+                                 Fill="#EF4444" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="ROMStatusLabel" Text="ROM Not Loaded"
+                                   Foreground="#9CA3AF" FontSize="18"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <!-- LAYER 1 ROW 1: Plain Canvas for buttons — never reflows -->

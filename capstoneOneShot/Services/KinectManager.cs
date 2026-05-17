@@ -34,8 +34,44 @@ namespace capstoneOneShot.Services
         // Voice command event — fires when a recognized phrase is spoken
         public event Action<string> VoiceCommandHeard;
 
+        // Connection status event — fires when Kinect connects or disconnects
+        public event Action<bool> ConnectionStatusChanged;
+
         private BodyDetectionStatus _lastStatus = BodyDetectionStatus.NotDetected;
         private object _speechEngine; // Holds either Microsoft.Speech or System.Speech engine
+
+        public KinectManager()
+        {
+            try
+            {
+                KinectSensor.KinectSensors.StatusChanged += KinectSensors_StatusChanged;
+            }
+            catch { }
+        }
+
+        private void KinectSensors_StatusChanged(object sender, StatusChangedEventArgs e)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (e.Status == KinectStatus.Disconnected)
+                {
+                    if (_sensor == e.Sensor || _sensor == null)
+                    {
+                        Shutdown();
+                        _sensor = null;
+                        ConnectionStatusChanged?.Invoke(false);
+                    }
+                }
+                else if (e.Status == KinectStatus.Connected)
+                {
+                    if (_sensor == null)
+                    {
+                        Initialize();
+                        ConnectionStatusChanged?.Invoke(IsConnected);
+                    }
+                }
+            });
+        }
 
 
         // ---------------------------------------------------------------

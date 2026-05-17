@@ -23,13 +23,7 @@ namespace capstoneOneShot.Views
 
             PopulateAudioDevices();
 
-            // Opacity fade-in
-            this.Opacity = 0;
-            this.Loaded += (s, e) =>
-            {
-                this.BeginAnimation(Window.OpacityProperty,
-                    new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(400)));
-            };
+            TransitionHelper.ApplyFadeInTransition(this);
 
             SetupPointer();
             SetupMouseAndKeyboard();

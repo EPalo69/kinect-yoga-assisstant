@@ -99,6 +99,8 @@ namespace capstoneOneShot.Views
             _pauseService.Enable(PauseGestureCanvas);
             Panel.SetZIndex(PauseGestureCanvas, 9999);
 
+            _kinectManager.ConnectionStatusChanged += OnConnectionStatusChanged;
+
             // Initialize status pills
             InitStatusPills();
 
@@ -112,18 +114,34 @@ namespace capstoneOneShot.Views
                     TriggerPause("USER LOST", "We lost track of you. Step back into frame to resume.", true);
                 }
             };
+        }
 
-            _kinectCheckTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            _kinectCheckTimer.Tick += (s, e) =>
+        private void OnConnectionStatusChanged(bool connected)
+        {
+            Dispatcher.Invoke(() =>
             {
-                if (!Properties.Settings.Default.KinectBypass && !_kinectManager.IsConnected)
+                PillKinectDot.Fill = new SolidColorBrush(connected ? Color.FromRgb(34, 197, 94) : Color.FromRgb(239, 68, 68));
+                PillKinectLabel.Text = connected ? "Kinect Connected" : "Kinect Not Connected";
+                PillKinectLabel.Foreground = new SolidColorBrush(connected ? Color.FromRgb(34, 197, 94) : Color.FromRgb(156, 163, 175));
+
+                if (!Properties.Settings.Default.KinectBypass)
                 {
-                    _kinectCheckTimer.Stop();
-                    PauseIcon.Text = "⚠";
-                    TriggerPause("KINECT DISCONNECTED", "Your Kinect sensor has been disconnected. Return to Main Menu.", false);
+                    if (!connected)
+                    {
+                        PauseIcon.Text = "⚠";
+                        TriggerPause("KINECT DISCONNECTED", "Your Kinect sensor has been disconnected. Please plug it back in to resume.", false);
+                    }
+                    else if (_isPaused)
+                    {
+                        // Update pause overlay message to allow resume when reconnected
+                        PauseTitleText.Text = "KINECT RECONNECTED";
+                        PauseDescriptionText.Text = "Sensor detected. You may now resume.";
+                        
+                        // Enable resume button
+                        ResumeButton.Visibility = Visibility.Visible;
+                    }
                 }
-            };
-            _kinectCheckTimer.Start();
+            });
         }
         private void UnhookKinect()
         {
@@ -131,6 +149,7 @@ namespace capstoneOneShot.Views
             _kinectManager.SkeletonFrameReady -= OnSkeletonFrameReady;
             _kinectManager.BodyStatusChanged -= OnBodyStatusChanged;
             _kinectManager.VoiceCommandHeard -= OnVoiceCommandHeard;
+            _kinectManager.ConnectionStatusChanged -= OnConnectionStatusChanged;
 
             if (_pauseService != null)
             {
