@@ -13,7 +13,6 @@ namespace capstoneOneShot.Services
         private readonly object _lock = new object();
         private bool _isPlaying = false;
         
-        // test changes
         // We use this to enforce a 1-second gap between instructions
         private DateTime _lastPlayEndTime = DateTime.MinValue;
         private bool _isGapWait = false;
