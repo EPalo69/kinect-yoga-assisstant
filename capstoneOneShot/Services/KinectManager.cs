@@ -49,6 +49,17 @@ namespace capstoneOneShot.Services
             catch { }
         }
 
+        // ---------------------------------------------------------------
+        // Registry check — mirrors the installer's KinectRuntimeNotInstalled
+        // ---------------------------------------------------------------
+        private static bool IsRuntimeInstalled()
+        {
+            // Same keys checked by the Inno Setup KinectRuntimeNotInstalled function
+            return
+                Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Kinect") != null ||
+                Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Microsoft\Kinect") != null;
+        }
+
         private void KinectSensors_StatusChanged(object sender, StatusChangedEventArgs e)
         {
             Application.Current.Dispatcher.Invoke(() =>
@@ -66,7 +77,7 @@ namespace capstoneOneShot.Services
                 {
                     if (_sensor == null)
                     {
-                        Initialize();
+                        Initialize(showRuntimeWarning: false); // hot-plug: never show download dialog
                         ConnectionStatusChanged?.Invoke(IsConnected);
                     }
                 }
@@ -77,7 +88,7 @@ namespace capstoneOneShot.Services
         // ---------------------------------------------------------------
         // Initialize and start the sensor
         // ---------------------------------------------------------------
-        public bool Initialize()
+        public bool Initialize(bool showRuntimeWarning = true)
         {
             // Support both Kinect SDK v1 (KinectSensor.KinectSensors) and v2 (KinectSensor.GetDefault)
             try
@@ -121,7 +132,25 @@ namespace capstoneOneShot.Services
                 catch { }
             }
 
-            if (_sensor == null) return false;
+            if (_sensor == null)
+            {
+                // Distinguish "runtime not installed" from "sensor unplugged".
+                // If the runtime is missing, inform the user once and direct them to documentation.
+                // If it's just unplugged we stay silent — the status pill already
+                // shows "Kinect Not Connected" and the hot-plug handler will reconnect.
+                if (!IsRuntimeInstalled() && showRuntimeWarning)
+                {
+                    MessageBox.Show(
+                        "The Kinect for Windows Runtime v1.8 was not detected on this machine.\n\n" +
+                        "Please refer to the setup documentation included with this application " +
+                        "for instructions on installing the required Kinect runtime before launching YAMAS.",
+                        "Kinect Runtime Not Found",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+                // Sensor just unplugged — return false silently, hot-plug will reconnect
+                return false;
+            }
 
             // Set smoothing parameters for skeleton tracking
             var smoothing = new TransformSmoothParameters

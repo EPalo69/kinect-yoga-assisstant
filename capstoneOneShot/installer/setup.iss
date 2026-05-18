@@ -47,7 +47,7 @@ Name: "{commondesktop}\{#AppName}";  Filename: "{app}\{#AppExeName}"; Tasks: des
 [Run]
 ; --- Install Kinect Runtime only if not already present ---
 Filename: "{tmp}\KinectRuntime-v1.8-Setup.exe"; \
-  Parameters: "/passive /norestart"; \
+  Parameters: "/promptrestart"; \
   StatusMsg: "Installing Kinect for Windows Runtime v1.8..."; \
   Check: KinectRuntimeNotInstalled; \
   Flags: waituntilterminated runascurrentuser
