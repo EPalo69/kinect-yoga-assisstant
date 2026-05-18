@@ -1,6 +1,6 @@
 using capstoneOneShot.Models;
 using capstoneOneShot.Services;
-//using HelixToolkit.Wpf;
+
 using Microsoft.Kinect;
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ namespace capstoneOneShot.Views
     public partial class MainWindow : Window
     {
         private KinectManager _kinectManager;
-        //private AvatarService _avatarService;
+
         private PointerSelectionService _pointerService;
 
         private const double JointRadius = 6;

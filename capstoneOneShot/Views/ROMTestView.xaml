@@ -460,7 +460,7 @@
                                 <!-- Gesture hint -->
                                 <Border BorderBrush="#0FFFFFFF" BorderThickness="0,1,0,0"
                                         Margin="0,22,0,0" Padding="0,18,0,0">
-                                    <TextBlock x:Name="PauseGestureHint" Text="Hover over Resume button to resume"
+                                    <TextBlock x:Name="PauseGestureHint" Text="Press Start to start the ROM TEST |Hover over Continue to resume"
                                                FontSize="16" Foreground="#9CA3AF"
                                                HorizontalAlignment="Center"/>
                                 </Border>

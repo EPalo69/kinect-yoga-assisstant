@@ -761,7 +761,12 @@ namespace capstoneOneShot.Views
                 _pointerService.RegisterButton(SelectionButton, circ, () => Dispatcher.Invoke(() => SelectionButton_Click(null, null)));
             }
             _pointerService.RegisterButton(EndSessionButton, circ, () => Dispatcher.Invoke(() => EndSessionButton_Click(null, null)));
-            _pointerService.RegisterButton(DebugWinButton, circ, () => Dispatcher.Invoke(() => DebugWinButton_Click(null, null)));
+
+            // Only show / register Force Win button when the debug setting is enabled
+            bool showForceWin = Properties.Settings.Default.ShowForceWin;
+            DebugWinButton.Visibility = showForceWin ? Visibility.Visible : Visibility.Collapsed;
+            if (showForceWin)
+                _pointerService.RegisterButton(DebugWinButton, circ, () => Dispatcher.Invoke(() => DebugWinButton_Click(null, null)));
 
             _pointerService.BringCursorToFront();
             _pointerService.Start();

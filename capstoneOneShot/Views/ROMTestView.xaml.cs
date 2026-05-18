@@ -701,6 +701,15 @@ namespace capstoneOneShot.Views
             RedoButton.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
             PauseGestureHint.Visibility = canResume ? Visibility.Visible : Visibility.Collapsed;
 
+            // Hint text differs depending on whether this is the initial "UP NEXT" screen or a mid-test pause
+            if (canResume)
+            {
+                bool isInitial = title.StartsWith("UP NEXT", StringComparison.OrdinalIgnoreCase);
+                PauseGestureHint.Text = isInitial
+                    ? "Hover over Start Test to begin"
+                    : "Hover over Continue to resume";
+            }
+
             PauseOverlay.Visibility   = Visibility.Visible;
             PauseOverlay.UpdateLayout();
 

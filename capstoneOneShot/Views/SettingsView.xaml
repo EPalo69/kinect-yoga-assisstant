@@ -112,6 +112,35 @@
                         <ComboBox x:Name="AudioInputCombo" Grid.Column="1" VerticalAlignment="Center" SelectionChanged="AudioInputCombo_SelectionChanged"/>
                     </Grid>
                 </Border>
+
+                <!-- DEBUG Section -->
+                <TextBlock Text="DEBUG" FontSize="16" FontWeight="SemiBold" Foreground="#A855F7" Margin="0,32,0,20"/>
+
+                <!-- Force Win Visibility Toggle -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20"
+                        BorderBrush="#2D1B3D" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="★  " Foreground="#A855F7" FontSize="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="Force Win Button" FontSize="18" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Text="Show the Force Win button in the pause menu during a session. Use this to skip a pose instantly during testing."
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <CheckBox x:Name="ShowForceWinToggle" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                  Checked="Setting_Changed" Unchecked="Setting_Changed">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                    </Grid>
+                </Border>
             </StackPanel>
         </Border>
 

@@ -74,5 +74,17 @@ namespace capstoneOneShot.Properties
                 this["AudioInputDevice"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ShowForceWin {
+            get {
+                return ((bool)(this["ShowForceWin"]));
+            }
+            set {
+                this["ShowForceWin"] = value;
+            }
+        }
     }
 }

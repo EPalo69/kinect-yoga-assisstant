@@ -20,6 +20,7 @@ namespace capstoneOneShot.Views
             // Load settings
             KinectBypassToggle.IsChecked = Properties.Settings.Default.KinectBypass;
             HideSkeletonToggle.IsChecked = Properties.Settings.Default.HideSkeleton;
+            ShowForceWinToggle.IsChecked  = Properties.Settings.Default.ShowForceWin;
 
             PopulateAudioDevices();
 
@@ -147,6 +148,9 @@ namespace capstoneOneShot.Views
             
             if (HideSkeletonToggle.IsChecked.HasValue)
                 Properties.Settings.Default.HideSkeleton = HideSkeletonToggle.IsChecked.Value;
+
+            if (ShowForceWinToggle.IsChecked.HasValue)
+                Properties.Settings.Default.ShowForceWin = ShowForceWinToggle.IsChecked.Value;
 
             Properties.Settings.Default.Save();
         }
