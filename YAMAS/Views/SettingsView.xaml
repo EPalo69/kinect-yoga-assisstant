@@ -1,0 +1,168 @@
+﻿<Window x:Class="YAMAS.Views.SettingsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Height="800" Width="1200"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
+        Background="#0A0F1E"
+        WindowStyle="None"
+        AllowsTransparency="True">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Canvas x:Name="MenuCanvas" Grid.RowSpan="3" Panel.ZIndex="20" IsHitTestVisible="False"/>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="40,32,40,20">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="SETTINGS"
+                           FontSize="32" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center"/>
+                <TextBlock Text="Configure application preferences"
+                           FontSize="14" Foreground="#6B7280"
+                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Border Grid.Row="1" Background="#111827" CornerRadius="16" Margin="40,20,40,20" Padding="40">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="500">
+                <TextBlock Text="GENERAL" FontSize="16" FontWeight="SemiBold" Foreground="#4DD0E1" Margin="0,0,0,20"/>
+                
+                <Border Background="#1F2937" CornerRadius="8" Padding="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Kinect Bypass" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock Text="Allow tests and sessions to run without detecting a Kinect or a user body." 
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <CheckBox x:Name="KinectBypassToggle" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                  Checked="Setting_Changed" Unchecked="Setting_Changed">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                    </Grid>
+                </Border>
+
+                <!-- Hide Skeleton Toggle -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20" Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Hide Skeleton" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock Text="Keep the 3D skeleton hidden during sessions and tests." 
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <CheckBox x:Name="HideSkeletonToggle" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                  Checked="Setting_Changed" Unchecked="Setting_Changed">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                    </Grid>
+                </Border>
+
+                <TextBlock Text="AUDIO" FontSize="16" FontWeight="SemiBold" Foreground="#4DD0E1" Margin="0,32,0,20"/>
+                
+                <!-- Audio Output -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                            <TextBlock Text="Audio Output Device" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock Text="Select the speaker or headphones used for voice instructions." 
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <ComboBox x:Name="AudioOutputCombo" Grid.Column="1" VerticalAlignment="Center" SelectionChanged="AudioOutputCombo_SelectionChanged"/>
+                    </Grid>
+                </Border>
+
+                <!-- Audio Input -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20" Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                            <TextBlock Text="Audio Input Device" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock Text="Select the microphone used for voice commands." 
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        
+                        <ComboBox x:Name="AudioInputCombo" Grid.Column="1" VerticalAlignment="Center" SelectionChanged="AudioInputCombo_SelectionChanged"/>
+                    </Grid>
+                </Border>
+
+                <!-- DEBUG Section -->
+                <TextBlock Text="DEBUG" FontSize="16" FontWeight="SemiBold" Foreground="#A855F7" Margin="0,32,0,20"/>
+
+                <!-- Force Win Visibility Toggle -->
+                <Border Background="#1F2937" CornerRadius="8" Padding="20"
+                        BorderBrush="#2D1B3D" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="★  " Foreground="#A855F7" FontSize="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="Force Win Button" FontSize="18" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Text="Show the Force Win button in the pause menu during a session. Use this to skip a pose instantly during testing."
+                                       FontSize="13" Foreground="#9CA3AF" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <CheckBox x:Name="ShowForceWinToggle" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                  Checked="Setting_Changed" Unchecked="Setting_Changed">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Footer / Return Button -->
+        <Border Grid.Row="2" Background="#050811" Padding="40,20" BorderBrush="#1F2937" BorderThickness="0,1,0,0">
+            <Grid x:Name="Btn_ReturnMenu" Width="120" Height="120"
+                  Cursor="Hand" HorizontalAlignment="Left" MouseLeftButtonUp="Btn_ReturnMenu_Click">
+                <Ellipse x:Name="Glow_ReturnMenu" Fill="#004DD0E1" Opacity="0"/>
+                <Ellipse Stroke="#4DD0E1" StrokeThickness="2" Fill="#111827"/>
+                <Ellipse x:Name="Progress_ReturnMenu"
+                         Stroke="#4DD0E1" StrokeThickness="4" Fill="Transparent"
+                         StrokeDashArray="0,377" StrokeDashOffset="-1"
+                         RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform Angle="-90"/>
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="🏠" FontSize="28" Foreground="#4DD0E1" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Menu" FontSize="12" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

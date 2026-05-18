@@ -1,0 +1,591 @@
+﻿<Window x:Class="YAMAS.Views.ROMTestView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Range of Motion Test"
+        Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="#080C14"
+        WindowState="Maximized"
+        WindowStyle="None"
+        AllowsTransparency="True">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>  <!-- Top bar -->
+            <RowDefinition Height="6"/>   <!-- Time bar -->
+            <RowDefinition Height="*"/>   <!-- Main -->
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="#0D1020"
+                BorderBrush="#194DD0E1"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="20,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Title -->
+                <TextBlock Grid.Column="0"
+                           Text="ROM ASSESSMENT"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="#4DD0E1"
+                           VerticalAlignment="Center"/>
+
+                <!-- Progress pips (centre) -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                    <TextBlock x:Name="ProgressLabel"
+                               Text="Test 1 of 4"
+                               FontSize="11"
+                               Foreground="#6B7A8D"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <ItemsControl x:Name="ProgressPips">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Status pills (right) -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,20,0">
+                    <Border Background="#111827" CornerRadius="30" Padding="24,9" Margin="0,0,15,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="PillKinectDot" Width="12" Height="12" Fill="#EF4444"
+                                     VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock x:Name="PillKinectLabel" Text="Kinect Not Connected"
+                                       Foreground="#9CA3AF" FontSize="18"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#111827" CornerRadius="30" Padding="24,9" Margin="0,0,15,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="PillBodyDot" Width="12" Height="12" Fill="#EF4444"
+                                     VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock x:Name="PillBodyLabel" Text="No Body Detected"
+                                       Foreground="#9CA3AF" FontSize="18"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#111827" CornerRadius="30" Padding="24,9">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="PillROMDot" Width="12" Height="12" Fill="#EF4444"
+                                     VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock x:Name="PillROMLabel" Text="ROM Not Loaded"
+                                       Foreground="#9CA3AF" FontSize="18"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── Time Remaining Bar ── -->
+        <Border Grid.Row="1" Background="#0D1020">
+            <!-- Track (dark background) -->
+            <Grid>
+                <!-- Fill — width is driven by animation in code-behind -->
+                <Border x:Name="TimeBarFill"
+                        HorizontalAlignment="Left"
+                        Width="0">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#4DD0E1" Offset="0"/>
+                            <GradientStop Color="#22C55E" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ══ MAIN: Camera fills entire width ══ -->
+        <Border Grid.Row="2" Background="#050810" ClipToBounds="True">
+            <Grid>
+
+                <!-- Layer 1: Camera feed -->
+                <Image x:Name="CameraFeed" Stretch="Uniform"/>
+
+                <!-- Layer 2: Skeleton canvas -->
+                <Canvas x:Name="SkeletonCanvas"/>
+
+                <!-- Layer 3: Pause gesture ring canvas -->
+                <Canvas x:Name="PauseGestureCanvas" IsHitTestVisible="True"/>
+
+                <!-- Layer 4: No body detected overlay -->
+                <Border x:Name="NoBodyOverlay" Background="#CC1A1A2E" Visibility="Visible">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Background="#FFCC00" CornerRadius="50"
+                                Width="80" Height="80" HorizontalAlignment="Center" Margin="0,0,0,16">
+                            <TextBlock Text="⚠" FontSize="40" Foreground="#1A1A2E"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="No Body Detected"
+                                   FontSize="24" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                        <TextBlock Text="Step in front of the Kinect so your full body is visible."
+                                   FontSize="14" Foreground="#BDBDBD" TextAlignment="Center"
+                                   TextWrapping="Wrap" MaxWidth="400" Margin="0,0,0,24"
+                                   HorizontalAlignment="Center"/>
+                        <Border Background="#22FFFFFF" CornerRadius="8" Padding="20,16" MaxWidth="420">
+                            <StackPanel>
+                                <TextBlock Text="TIPS" FontSize="11" FontWeight="Bold"
+                                           Foreground="#FFCC00" Margin="0,0,0,10"/>
+                                <TextBlock Text="• Stand 1.5 – 2.5 meters from the sensor"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Make sure the room is well lit"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Full body from head to feet must be visible"
+                                           Foreground="#BDBDBD" FontSize="13" Margin="0,0,0,6"/>
+                                <TextBlock Text="• Remove objects blocking the sensor"
+                                           Foreground="#BDBDBD" FontSize="13"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Layer 5: Partial tracking banner -->
+                <Border x:Name="PartialBodyBanner" Background="#EEF59E0B"
+                        Padding="16,10" VerticalAlignment="Top" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="⚠  " Foreground="#1A1A2E" FontSize="16"
+                                   FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Partial tracking — step back so your full body is visible"
+                                   Foreground="#1A1A2E" FontSize="14" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- HUD: test name badge (top-right) -->
+                <Border Background="#BF080C14" BorderBrush="#334DD0E1" BorderThickness="1"
+                        CornerRadius="14" Padding="10,5"
+                        HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,14,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="TestNameLabel" Text="Shoulder Raise"
+                                   FontSize="11" Foreground="#6B7A8D"/>
+                        <TextBlock x:Name="TestNumberBadge" Text=" #1"
+                                   FontSize="11" FontWeight="SemiBold" Foreground="#E8EDF2"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Layer 6: Large countdown (centre, subtle) -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                    <TextBlock x:Name="CountdownText"
+                               Text=""
+                               FontSize="120" FontWeight="Bold"
+                               Foreground="#1EFFFFFF"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="CountdownSubLabel"
+                               Text=""
+                               FontSize="11" Foreground="#1EFFFFFF"
+                               HorizontalAlignment="Center"
+                               Margin="0,-10,0,0"/>
+                </StackPanel>
+
+                <!-- ═══ INSTRUCTION OVERLAY — top-centre (matches SessionView) ═══ -->
+                <Border x:Name="InstructionOverlay"
+                        Background="#E0101622"
+                        BorderBrush="#334DD0E1"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="24,14"
+                        MinWidth="320"
+                        MaxWidth="930"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,16,0,0"
+                        IsHitTestVisible="False">
+                    <StackPanel HorizontalAlignment="Center">
+                        <!-- Header row -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                            <TextBlock Text="&#xE81E;" FontFamily="Segoe MDL2 Assets"
+                                       Foreground="#64B5F6" FontSize="21"
+                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="INSTRUCTION"
+                                       FontFamily="Segoe UI" FontWeight="Bold" FontSize="16"
+                                       Foreground="#64B5F6" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <!-- Main instruction text -->
+                        <TextBlock x:Name="InstructionLabel"
+                                   Text="Raise both arms as high as you can overhead"
+                                   FontFamily="Segoe UI" FontSize="24" FontWeight="SemiBold"
+                                   Foreground="#E8EDF2" TextWrapping="Wrap"
+                                   TextAlignment="Center" HorizontalAlignment="Center"/>
+                        <!-- Sub instruction -->
+                        <TextBlock x:Name="InstructionSubLabel"
+                                   Text="Hold at your maximum range and keep still"
+                                   FontFamily="Segoe UI" FontSize="18"
+                                   Foreground="#6B7A8D" TextAlignment="Center"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══ JOINT ANGLES PANEL — bottom-left overlay ═══ -->
+                <Border x:Name="JointAnglePanel"
+                        Background="#D9080C14"
+                        BorderBrush="#334DD0E1"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="16,14"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Margin="20,0,0,20"
+                        MinWidth="260"
+                        IsHitTestVisible="False">
+                    <StackPanel>
+                        <!-- Panel header -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="📐" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="JOINT ANGLES"
+                                       FontSize="10" FontWeight="Bold"
+                                       Foreground="#4DD0E1" VerticalAlignment="Center"/>
+                            <TextBlock Text="  vs Ideal Average"
+                                       FontSize="10" Foreground="#3D4A5A"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Column headers -->
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="JOINT" FontSize="9" FontWeight="Bold"
+                                       Foreground="#3D4A5A" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="YOURS" FontSize="9" FontWeight="Bold"
+                                       Foreground="#4DD0E1" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="IDEAL" FontSize="9" FontWeight="Bold"
+                                       Foreground="#FFB300" HorizontalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Divider -->
+                        <Border Height="1" Background="#0CFFFFFF" Margin="0,0,0,8"/>
+
+                        <!-- Joint rows — populated in code-behind via JointAngleRows ItemsControl -->
+                        <ItemsControl x:Name="JointAngleRows">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Each item is a JointAngleRowVM -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="7" Height="7"
+                                                     Fill="{Binding DotColor}"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Label}"
+                                                       FontSize="11" Foreground="#9E9E9E"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding UserAngle}"
+                                                   FontSize="13" FontWeight="Bold"
+                                                   Foreground="{Binding AngleColor}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding IdealAngle}"
+                                                   FontSize="12"
+                                                   Foreground="#7A6200"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Divider -->
+                        <Border Height="1" Background="#0CFFFFFF" Margin="0,6,0,8"/>
+
+                        <!-- Best angle row -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="BEST SO FAR" FontSize="9" FontWeight="Bold"
+                                       Foreground="#3D4A5A" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="BestAngleReadout"
+                                       Grid.Column="1"
+                                       Text="--°"
+                                       FontSize="14" FontWeight="Bold"
+                                       Foreground="#FFB300"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══ POSE REFERENCE IMAGE — transparent box overlay (bottom-right) ═══ -->
+                <Border Background="#D9080C14"
+                        BorderBrush="#334DD0E1"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="12"
+                        Width="400"
+                        Height="480"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,20,20">
+                    <Grid>
+                        <!-- Label at top -->
+                        <TextBlock Text="TEST REFERENCE"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#9E9E9E"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Top"
+                                   Margin="0,0,0,8"/>
+                        <!-- The actual image -->
+                        <Image x:Name="PoseReferenceImage"
+                               Stretch="Uniform"
+                               Margin="0,20,0,0"/>
+                    </Grid>
+                </Border>
+
+                <!-- ═══ PAUSE OVERLAY ═══ -->
+                <Border x:Name="PauseOverlay"
+                        Background="#E0080C14"
+                        Visibility="Collapsed">
+                    <Border.Effect>
+                        <BlurEffect Radius="0"/>
+                    </Border.Effect>
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Canvas x:Name="PauseOverlayCursorCanvas"
+                                IsHitTestVisible="False"
+                                Panel.ZIndex="9999"/>
+                        <Border Background="#F0101622"
+                                BorderBrush="#334DD0E1"
+                                BorderThickness="1"
+                                CornerRadius="20"
+                                Padding="48,40"
+                                MinWidth="600">
+                            <StackPanel HorizontalAlignment="Center">
+                                <!-- Pause icon -->
+                                <Border Width="56" Height="56"
+                                        CornerRadius="28"
+                                        Background="#1A4DD0E1"
+                                        BorderBrush="#4D4DD0E1"
+                                        BorderThickness="1.5"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,0,0,18">
+                                    <TextBlock x:Name="PauseIcon" Text="⏸" FontSize="22"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <TextBlock x:Name="PauseTitleText"
+                                           Text="PAUSED"
+                                           FontSize="32" FontWeight="Bold"
+                                           Foreground="#E8EDF2"
+                                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="PauseDescriptionText"
+                                           Text="Your test is paused. Take a moment before continuing."
+                                           FontSize="13" Foreground="#6B7A8D"
+                                           HorizontalAlignment="Center" TextAlignment="Center"
+                                           LineHeight="22" Margin="0,0,0,16"/>
+                                           
+                                <!-- ROM Pose Image in Pause -->
+                                <Image x:Name="PausePoseImage" Height="140" Margin="0,0,0,28" Visibility="Collapsed" Stretch="Uniform"/>
+
+                                <!-- Circular action buttons -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
+                                    <!-- Resume / Start -->
+                                    <Grid x:Name="ResumeButton" Width="160" Height="160" Margin="15,0"
+                                          Cursor="Hand" MouseLeftButtonUp="ResumeButton_Click">
+                                        <Ellipse x:Name="Glow_Resume" Fill="#004DD0E1" Opacity="0"/>
+                                        <Ellipse Stroke="#4DD0E1" StrokeThickness="2" Fill="#111827"/>
+                                        <Ellipse x:Name="Progress_Resume" Stroke="#4DD0E1" StrokeThickness="4"
+                                                 Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1"
+                                                 RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="▶" FontSize="36" Foreground="#4DD0E1"
+                                                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock x:Name="ResumeButtonText" Text="Start Test"
+                                                       FontSize="16" FontWeight="SemiBold"
+                                                       Foreground="White" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Redo -->
+                                    <Grid x:Name="RedoButton" Width="160" Height="160" Margin="15,0"
+                                          Cursor="Hand" MouseLeftButtonUp="RedoButton_Click">
+                                        <Ellipse x:Name="Glow_Redo" Fill="#006B7280" Opacity="0"/>
+                                        <Ellipse Stroke="#6B7280" StrokeThickness="2" Fill="#111827"/>
+                                        <Ellipse x:Name="Progress_Redo" Stroke="#6B7280" StrokeThickness="4"
+                                                 Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1"
+                                                 RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="↺" FontSize="42" Foreground="#6B7280"
+                                                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock Text="Redo Test" FontSize="16" FontWeight="SemiBold"
+                                                       Foreground="White" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- End Session -->
+                                    <Grid x:Name="EndSessionButton" Width="160" Height="160" Margin="15,0"
+                                          Cursor="Hand" MouseLeftButtonUp="EndSessionButton_Click">
+                                        <Ellipse x:Name="Glow_EndSession" Fill="#00EF4444" Opacity="0"/>
+                                        <Ellipse Stroke="#EF4444" StrokeThickness="2" Fill="#111827"/>
+                                        <Ellipse x:Name="Progress_EndSession" Stroke="#EF4444" StrokeThickness="4"
+                                                 Fill="Transparent" StrokeDashArray="0,502" StrokeDashOffset="-1"
+                                                 RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                        </Ellipse>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="✕" FontSize="36" Foreground="#EF4444"
+                                                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock Text="End Session" FontSize="16" FontWeight="SemiBold"
+                                                       Foreground="White" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- Gesture hint -->
+                                <Border BorderBrush="#0FFFFFFF" BorderThickness="0,1,0,0"
+                                        Margin="0,22,0,0" Padding="0,18,0,0">
+                                    <TextBlock x:Name="PauseGestureHint" Text="Press Start to start the ROM TEST |Hover over Continue to resume"
+                                               FontSize="16" Foreground="#9CA3AF"
+                                               HorizontalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- ═══ RESULTS OVERLAY — shown when all tests complete ═══ -->
+                <Border x:Name="ResultsOverlay"
+                        Background="#F0080C14"
+                        Visibility="Collapsed"
+                        Panel.ZIndex="500">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    MaxWidth="700"
+                                    Margin="40,48,40,48">
+
+                            <!-- Title block -->
+                            <TextBlock Text="ASSESSMENT COMPLETE"
+                                       FontSize="13" FontWeight="Bold"
+                                       Foreground="#4DD0E1"
+                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                            <TextBlock Text="ROM Results"
+                                       FontSize="36" FontWeight="Bold"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="ResultsSubtitle"
+                                       Text="Here's how you performed across all four tests."
+                                       FontSize="14" Foreground="#6B7A8D"
+                                       HorizontalAlignment="Center" Margin="0,0,0,32"/>
+
+                            <!-- Difficulty badge -->
+                            <Border x:Name="DifficultyBadge"
+                                    HorizontalAlignment="Center"
+                                    CornerRadius="24" Padding="28,10"
+                                    Margin="0,0,0,36">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Assigned Level: "
+                                               FontSize="15" Foreground="#9CA3AF"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DifficultyLabel"
+                                               Text="Beginner"
+                                               FontSize="18" FontWeight="Bold"
+                                               Foreground="White"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Result cards (populated in code-behind) -->
+                            <ItemsControl x:Name="ResultCards">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0F1525"
+                                                BorderBrush="#1E2D4A"
+                                                BorderThickness="1"
+                                                CornerRadius="14"
+                                                Padding="24,18"
+                                                Margin="0,0,0,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding TestName}"
+                                                               FontSize="16" FontWeight="SemiBold"
+                                                               Foreground="White"/>
+                                                    <TextBlock Text="{Binding Metric}"
+                                                               FontSize="12" Foreground="#6B7A8D"
+                                                               Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Value}"
+                                                               FontSize="22" FontWeight="Bold"
+                                                               Foreground="{Binding ValueColor}"
+                                                               HorizontalAlignment="Right"/>
+                                                    <TextBlock Text="{Binding Rating}"
+                                                               FontSize="11"
+                                                               Foreground="{Binding ValueColor}"
+                                                               HorizontalAlignment="Right"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Return to Menu button -->
+                            <Grid x:Name="Btn_ReturnMenu"
+                                  Width="150" Height="150"
+                                  HorizontalAlignment="Center"
+                                  Cursor="Hand" Margin="0,24,0,0"
+                                  MouseLeftButtonUp="ReturnToMenu_Click">
+                                <Ellipse x:Name="Glow_Return" Fill="#004DD0E1" Opacity="0"/>
+                                <Ellipse Stroke="#4DD0E1" StrokeThickness="2" Fill="#111827"/>
+                                <Ellipse x:Name="Progress_Return"
+                                         Stroke="#4DD0E1" StrokeThickness="4" Fill="Transparent"
+                                         StrokeDashArray="0,471" StrokeDashOffset="-1"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform><RotateTransform Angle="-90"/></Ellipse.RenderTransform>
+                                </Ellipse>
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="🏠" FontSize="28" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Main Menu" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="White" HorizontalAlignment="Center"
+                                               Margin="0,6,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

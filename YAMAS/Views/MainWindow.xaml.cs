@@ -1,0 +1,376 @@
+﻿using YAMAS.Models;
+using YAMAS.Services;
+
+using Microsoft.Kinect;
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+
+namespace YAMAS.Views
+{
+    public partial class MainWindow : Window
+    {
+        private KinectManager _kinectManager;
+
+        private PointerSelectionService _pointerService;
+
+        private const double JointRadius = 6;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            TransitionHelper.ApplyFadeInTransition(this);
+            Loaded += OnLoaded;
+        }
+
+        // ── Startup ──────────────────────────────────────────────────────
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            _pointerService = new PointerSelectionService(MenuCanvas);
+            BuildMenuButtons();
+            SetupMouseAndKeyboard();
+            StartKinect();
+        }
+
+        // ── Button placement ─────────────────────────────────────────────
+        private void BuildMenuButtons()
+        {
+            MenuCanvas.UpdateLayout();
+
+            if (MenuCanvas.ActualWidth == 0 || MenuCanvas.ActualHeight == 0)
+            {
+                MenuCanvas.SizeChanged += (s, ev) =>
+                {
+                    MenuCanvas.SizeChanged -= null;
+                    PlaceButtons();
+                };
+                return;
+            }
+            PlaceButtons();
+        }
+
+        private void PlaceButtons()
+        {
+            double cw = MenuCanvas.ActualWidth;
+            double ch = MenuCanvas.ActualHeight;
+            double cx = cw / 2;
+            double cy = ch / 2;
+            double size = 180;
+            double circ = Math.PI * size;
+
+            var positions = new Dictionary<Grid, Point>
+            {
+                { Btn_StartSession, new Point(cx,        cy - 250) }, 
+                { Btn_ROMTest,      new Point(cx - 200,  cy - 140) }, 
+                { Btn_PoseLibrary,  new Point(cx + 200,  cy - 140) }, 
+                { Btn_Settings,     new Point(cx - 400,  cy - 30) }, 
+                { Btn_Exit,         new Point(cx + 400,  cy - 30) }, 
+            };
+
+            foreach (var kvp in positions)
+            {
+                var btn = kvp.Key;
+                var center = kvp.Value;
+
+                btn.Width = size;
+                btn.Height = size;
+
+                if (btn.Parent is Panel oldParent)
+                    oldParent.Children.Remove(btn);
+
+                Canvas.SetLeft(btn, center.X - size / 2);
+                Canvas.SetTop(btn, center.Y - size / 2);
+
+                if (!MenuCanvas.Children.Contains(btn))
+                    MenuCanvas.Children.Add(btn);
+
+                Action action = null;
+                switch (btn.Tag?.ToString())
+                {
+                    case "StartSession":
+                        action = () => {
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var selection = new PoseSelectionView(_kinectManager, false);
+                                selection.Show();
+                            });
+                        };
+                        break;
+                    case "ROMTest":
+                        action = () => {
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var rom = new ROMTestView(_kinectManager);
+                                rom.Show();
+                            });
+                        };
+                        break;
+                    case "PoseLibrary":
+                        action = () => {
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var library = new PoseSelectionView(_kinectManager, true);
+                                library.Show();
+                            });
+                        };
+                        break;
+                    case "Settings":
+                        action = () => {
+                            TransitionHelper.FadeOutAndHide(this, () => {
+                                var settings = new SettingsView(_kinectManager);
+                                settings.Show();
+                            });
+                        };
+                        break;
+                    case "Exit":
+                        action = () => {
+                            _kinectManager?.Shutdown();
+                            Application.Current.Shutdown();
+                        };
+                        break;
+                }
+
+                _pointerService.RegisterButton(btn, circ, action);
+            }
+
+            _pointerService.BringCursorToFront();
+        }
+
+        // ── Mouse + keyboard fallback ────────────────────────────────────
+        private void SetupMouseAndKeyboard()
+        {
+            foreach (var btn in new[] { Btn_StartSession, Btn_ROMTest,
+                                         Btn_PoseLibrary, Btn_Settings, Btn_Exit })
+            {
+                var b = btn;
+                b.MouseEnter += (s, e) => _pointerService.SetHover(b);
+                b.MouseLeave += (s, e) => _pointerService.ClearHover();
+                b.MouseLeftButtonUp += (s, e) => { _pointerService.ClearHover(); _pointerService.ManualFire(b); };
+            }
+
+            KeyDown += (s, e) =>
+            {
+                switch (e.Key)
+                {
+                    case System.Windows.Input.Key.D1:
+                    case System.Windows.Input.Key.NumPad1: _pointerService.ManualFire(Btn_StartSession); break;
+                    case System.Windows.Input.Key.D2:
+                    case System.Windows.Input.Key.NumPad2: _pointerService.ManualFire(Btn_ROMTest); break;
+                    case System.Windows.Input.Key.D3:
+                    case System.Windows.Input.Key.NumPad3: _pointerService.ManualFire(Btn_PoseLibrary); break;
+                    case System.Windows.Input.Key.D4:
+                    case System.Windows.Input.Key.NumPad4: _pointerService.ManualFire(Btn_Settings); break;
+                    case System.Windows.Input.Key.Escape: _pointerService.ManualFire(Btn_Exit); break;
+                }
+            };
+        }
+
+        // ── Kinect init ──────────────────────────────────────────────────
+        private void StartKinect()
+        {
+            _kinectManager = new KinectManager();
+            _kinectManager.ConnectionStatusChanged += OnConnectionStatusChanged;
+            _kinectManager.SkeletonFrameReady += OnSkeletonFrameReady;
+            _kinectManager.BodyStatusChanged += OnBodyStatusChanged;
+
+            bool connected = _kinectManager.Initialize();
+            OnConnectionStatusChanged(connected);
+
+            _pointerService.Start();
+            UpdateROMPill();
+        }
+
+        private void OnConnectionStatusChanged(bool connected)
+        {
+            if (!this.IsVisible) return;
+            Dispatcher.Invoke(() =>
+            {
+                if (connected)
+                {
+                    KinectStatusDot.Fill = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                    KinectStatusLabel.Text = "Kinect Connected";
+                    KinectStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                }
+                else
+                {
+                    KinectStatusDot.Fill = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                    KinectStatusLabel.Text = "Kinect Not Connected";
+                    KinectStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+                    
+                    // Reset body pill to default state when Kinect disconnects
+                    OnBodyStatusChanged(BodyDetectionStatus.NotDetected);
+                }
+            });
+        }
+
+        // ── Body status pill ─────────────────────────────────────────────
+        private void OnBodyStatusChanged(BodyDetectionStatus status)
+        {
+            if (!this.IsVisible) return;
+            Dispatcher.Invoke(() =>
+            {
+                switch (status)
+                {
+                    case BodyDetectionStatus.Detected:
+                        BodyStatusDot.Fill = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                        BodyStatusLabel.Text = "Body Detected";
+                        BodyStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                        break;
+                    case BodyDetectionStatus.PartialDetect:
+                        BodyStatusDot.Fill = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                        BodyStatusLabel.Text = "Partial Body";
+                        BodyStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
+                        break;
+                    case BodyDetectionStatus.NotDetected:
+                        BodyStatusDot.Fill = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                        BodyStatusLabel.Text = "No Body Detected";
+                        BodyStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+                        break;
+                }
+
+                // Refresh ROM pill (user may have just returned from ROM test)
+                UpdateROMPill();
+            });
+        }
+
+        // ── ROM pill ───────────────────────────────────────────────────
+        private void UpdateROMPill()
+        {
+            if (UserSession.HasCompletedROM)
+            {
+                ROMStatusDot.Fill   = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+                ROMStatusLabel.Text = "ROM Loaded";
+                ROMStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+            }
+            else
+            {
+                ROMStatusDot.Fill   = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+                ROMStatusLabel.Text = "ROM Not Loaded";
+                ROMStatusLabel.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
+            }
+        }
+
+        // ── Skeleton frame ───────────────────────────────────────────────
+        private void OnSkeletonFrameReady(Skeleton[] skeletons)
+        {
+            if (!this.IsVisible) return;
+            if (skeletons == null || skeletons.Length == 0) return;
+            var skeleton = skeletons[0];
+            var leftHand = skeleton.Joints[JointType.HandLeft];
+            var rightHand = skeleton.Joints[JointType.HandRight];
+            Joint activeHand = leftHand.Position.Y > rightHand.Position.Y
+                               ? leftHand : rightHand;
+            Dispatcher.Invoke(() =>
+            {
+                DrawSkeleton(skeleton);
+
+                if (activeHand.TrackingState == JointTrackingState.NotTracked)
+                {
+                    _pointerService.ProcessHandPosition(new Point(0, 0), false);
+                    return;
+                }
+
+                // Use MapToCanvas so cursor is in the exact same coordinate space as the skeleton
+                var handPoint = MapToCanvas(activeHand.Position, MenuCanvas.ActualWidth, MenuCanvas.ActualHeight);
+                _pointerService.ProcessHandPosition(handPoint, true);
+            });
+        }
+
+        private void DrawSkeleton(Skeleton skeleton)
+        {
+            SkeletonCanvas.Children.Clear();
+            var bones = new[]
+            {
+                (JointType.Head,           JointType.ShoulderCenter),
+                (JointType.ShoulderCenter, JointType.ShoulderLeft),
+                (JointType.ShoulderCenter, JointType.ShoulderRight),
+                (JointType.ShoulderLeft,   JointType.ElbowLeft),
+                (JointType.ElbowLeft,      JointType.WristLeft),
+                (JointType.ShoulderRight,  JointType.ElbowRight),
+                (JointType.ElbowRight,     JointType.WristRight),
+                (JointType.ShoulderCenter, JointType.HipCenter),
+                (JointType.HipCenter,      JointType.HipLeft),
+                (JointType.HipCenter,      JointType.HipRight),
+                (JointType.HipLeft,        JointType.KneeLeft),
+                (JointType.KneeLeft,       JointType.AnkleLeft),
+                (JointType.HipRight,       JointType.KneeRight),
+                (JointType.KneeRight,      JointType.AnkleRight),
+            };
+            foreach (var (s, e) in bones) DrawBone(skeleton, s, e);
+            foreach (var jt in JointAngleCalculator.AnalysisJoints) DrawJoint(skeleton.Joints[jt]);
+        }
+
+        private void DrawBone(Skeleton skeleton, JointType a, JointType b)
+        {
+            var j1 = skeleton.Joints[a];
+            var j2 = skeleton.Joints[b];
+            if (j1.TrackingState == JointTrackingState.NotTracked ||
+                j2.TrackingState == JointTrackingState.NotTracked) return;
+
+            var p1 = MapToCanvas(j1.Position, SkeletonCanvas.ActualWidth, SkeletonCanvas.ActualHeight);
+            var p2 = MapToCanvas(j2.Position, SkeletonCanvas.ActualWidth, SkeletonCanvas.ActualHeight);
+            SkeletonCanvas.Children.Add(new Line
+            {
+                X1 = p1.X,
+                Y1 = p1.Y,
+                X2 = p2.X,
+                Y2 = p2.Y,
+                Stroke = new SolidColorBrush(Color.FromArgb(200, 100, 181, 246)),
+                StrokeThickness = 3
+            });
+        }
+
+        private void DrawJoint(Joint joint)
+        {
+            if (joint.TrackingState == JointTrackingState.NotTracked) return;
+            var p = MapToCanvas(joint.Position, SkeletonCanvas.ActualWidth, SkeletonCanvas.ActualHeight);
+            var c = new Ellipse
+            {
+                Width = JointRadius * 2,
+                Height = JointRadius * 2,
+                Fill = Brushes.White,
+                Stroke = new SolidColorBrush(Color.FromRgb(100, 181, 246)),
+                StrokeThickness = 2
+            };
+            Canvas.SetLeft(c, p.X - JointRadius);
+            Canvas.SetTop(c, p.Y - JointRadius);
+            SkeletonCanvas.Children.Add(c);
+        }
+
+        private Point MapToCanvas(SkeletonPoint pos, double canvasW, double canvasH)
+        {
+            const double sourceAspect = 640.0 / 480.0;
+            double canvasAspect = canvasW / canvasH;
+            double renderW, renderH, offsetX, offsetY;
+
+            if (canvasAspect > sourceAspect)
+            {
+                renderH = canvasH;
+                renderW = canvasH * sourceAspect;
+                offsetX = (canvasW - renderW) / 2.0;
+                offsetY = 0;
+            }
+            else
+            {
+                renderW = canvasW;
+                renderH = canvasW / sourceAspect;
+                offsetX = 0;
+                offsetY = (canvasH - renderH) / 2.0;
+            }
+
+            double x = (pos.X + 1.0) / 2.0 * renderW + offsetX;
+            double y = (1.0 - (pos.Y + 1.0) / 2.0) * renderH + offsetY;
+            return new Point(x, y);
+        }
+
+        // ── Cleanup ──────────────────────────────────────────────────────
+        protected override void OnClosed(EventArgs e)
+        {
+            _pointerService?.Stop();
+            _kinectManager?.Shutdown();
+            base.OnClosed(e);
+        }
+    }
+}
